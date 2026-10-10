@@ -5,30 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0b3d1e">
 
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=999">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
 
     <title>Poker 2048</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-   <!-- Модальное окно: справочник комбинаций -->
-<div class="modal" id="combosModal">
-    <div class="modal-backdrop" id="combosBackdrop"></div>
-    <div class="modal-content">
-        <button class="modal-close" id="combosClose" aria-label="Закрыть">✕</button>
+    <div class="app">
+        <header class="header">
+            <h1>♠ Poker 2048 ♥</h1>
+            <p class="subtitle">Соберите 👑 Роял-флеш</p>
+        </header>
 
-        <h2 class="modal-title">♠ Комбинации покера ♥</h2>
-        <p class="modal-subtitle">Собирайте одинаковые — они сливаются в следующую</p>
-
-        <div class="combos-list" id="combosList"></div>
-
-        <div class="modal-hint">
-            Цель — собрать 👑 <strong>Роял-флеш</strong> (1024 очка)
+        <div class="hud">
+            <div class="score-box">
+                <div class="label">SCORE</div>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="score-box">
+                <div class="label">BEST</div>
+                <div class="value" id="best">0</div>
+            </div>
+            <button id="newGame">Новая</button>
+            <button id="combosBtn" class="btn-info" title="Комбинации">📖</button>
         </div>
-    </div>
-</div>
 
         <div class="board" id="board">
             <div class="grid-layer" id="gridLayer"></div>
@@ -36,6 +37,23 @@
         </div>
 
         <p class="hint">Стрелки, WASD или свайпы</p>
+    </div>
+
+    <!-- Модальное окно: справочник комбинаций -->
+    <div class="modal" id="combosModal">
+        <div class="modal-backdrop" id="combosBackdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="combosClose" aria-label="Закрыть">✕</button>
+
+            <h2 class="modal-title">♠ Комбинации покера ♥</h2>
+            <p class="modal-subtitle">Собирайте одинаковые — они сливаются в следующую</p>
+
+            <div class="combos-list" id="combosList"></div>
+
+            <div class="modal-hint">
+                Цель — собрать 👑 <strong>Роял-флеш</strong> (1024 очка)
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

@@ -6,17 +6,17 @@
     // ============================================================
     var SIZE = 4;
 
-    var COMBOS = [
-        { name: 'Старшая карта', value: 2,    short: 'Старшая' },
-        { name: 'Пара',          value: 4,    short: 'Пара' },
-        { name: 'Две пары',      value: 8,    short: 'Две пары' },
-        { name: 'Сет',           value: 16,   short: 'Сет' },
-        { name: 'Стрит',         value: 32,   short: 'Стрит' },
-        { name: 'Флеш',          value: 64,   short: 'Флеш' },
-        { name: 'Фулл-хаус',     value: 128,  short: 'Фулл-хаус' },
-        { name: 'Каре',          value: 256,  short: 'Каре' },
-        { name: 'Стрит-флеш',    value: 512,  short: 'Стрит-флеш' },
-        { name: 'Роял-флеш',     value: 1024, short: 'Роял-флеш' }
+       var COMBOS = [
+        { name: 'Старшая карта', value: 2,    short: 'Старшая',    img: 'img/2.png' },
+        { name: 'Пара',          value: 4,    short: 'Пара',       img: 'img/4.png' },
+        { name: 'Две пары',      value: 8,    short: 'Две пары',   img: 'img/8.png' },
+        { name: 'Сет',           value: 16,   short: 'Сет',        img: 'img/16.png' },
+        { name: 'Стрит',         value: 32,   short: 'Стрит',      img: 'img/32.png' },
+        { name: 'Флеш',          value: 64,   short: 'Флеш',       img: 'img/64.png' },
+        { name: 'Фулл-хаус',     value: 128,  short: 'Фулл-хаус',  img: 'img/128.png' },
+        { name: 'Каре',          value: 256,  short: 'Каре',       img: 'img/256.png' },
+        { name: 'Стрит-флеш',    value: 512,  short: 'Стрит-флеш', img: 'img/512.png' },
+        { name: 'Роял-флеш',     value: 1024, short: 'Роял-флеш',  img: 'img/1024.png' }
     ];
     var MAX_LEVEL = COMBOS.length - 1;
 
@@ -153,7 +153,7 @@
     // ============================================================
     // ПЛИТКИ (TILE DOM)
     // ============================================================
-    function createTileNode(id, level) {
+       function createTileNode(id, level) {
         var node = document.createElement('div');
         node.className = 'tile';
         node.setAttribute('data-id', id);
@@ -161,17 +161,27 @@
 
         var art = document.createElement('div');
         art.className = 'tile-art';
+
+        // Картинка-арт комбинации
+        var img = document.createElement('img');
+        img.className = 'tile-img';
+        img.alt = '';
+        img.draggable = false;
+        art.appendChild(img);
+
         node.appendChild(art);
 
         var val = document.createElement('div');
         val.className = 'tile-value';
         node.appendChild(val);
 
+        // Эмодзи (для fallback, если картинки нет)
         var emoji = document.createElement('div');
         emoji.className = 'tile-emoji';
         emoji.style.display = 'none';
         art.appendChild(emoji);
 
+        // Текстовая метка (для fallback, если картинки нет)
         var label = document.createElement('div');
         label.className = 'tile-label';
         art.appendChild(label);
@@ -179,27 +189,46 @@
         return node;
     }
 
-    function updateTileContent(node, level) {
+       function updateTileContent(node, level) {
         node.setAttribute('data-level', level);
 
+        var img   = node.querySelector('.tile-img');
         var emoji = node.querySelector('.tile-emoji');
         var label = node.querySelector('.tile-label');
         var value = node.querySelector('.tile-value');
         var combo = COMBOS[level];
 
         value.textContent = combo.value;
+        label.textContent = combo.short;
 
-        if (level === MAX_LEVEL) {
-            emoji.style.display = '';
-            emoji.textContent = '\uD83D\uDC51';
-            label.textContent = 'Роял-флеш';
-        } else {
+        // Если у комбинации есть картинка — показываем её
+        if (combo.img) {
+            img.src = combo.img;
+            img.style.display = '';
+            img.onerror = function () {
+                // Если картинка не загрузилась — fallback на текст
+                img.style.display = 'none';
+                label.style.display = '';
+                if (level === MAX_LEVEL) {
+                    emoji.style.display = '';
+                    emoji.textContent = '\uD83D\uDC51';
+                }
+            };
+            // Скрываем текстовую метку — картинка сама всё скажет
+            label.style.display = 'none';
             emoji.style.display = 'none';
-            emoji.textContent = '';
-            label.textContent = combo.short;
+        } else {
+            // Нет картинки — показываем текст
+            img.style.display = 'none';
+            label.style.display = '';
+            if (level === MAX_LEVEL) {
+                emoji.style.display = '';
+                emoji.textContent = '\uD83D\uDC51';
+            } else {
+                emoji.style.display = 'none';
+            }
         }
     }
-
     // ============================================================
     // ЛОГИКА
     // ============================================================

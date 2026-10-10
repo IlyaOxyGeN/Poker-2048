@@ -137,7 +137,105 @@
             node.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
         }
     }
+    // ============================================================
+    // СПРАВОЧНИК КОМБИНАЦИЙ
+    // ============================================================
+    var COMBO_DESCRIPTIONS = [
+        'Одна любая карта. Основа всего — собирайте пары.',
+        'Две карты одного ранга. Сливаются в «Две пары».',
+        'Две пары разных рангов. Сливаются в «Сет».',
+        'Три карты одного ранга. Сливаются в «Стрит».',
+        'Пять карт подряд по рангу. Сливаются в «Флеш».',
+        'Пять карт одной масти. Сливаются в «Фулл-хаус».',
+        'Тройка + пара. Сливаются в «Каре».',
+        'Четыре карты одного ранга. Сливаются в «Стрит-флеш».',
+        'Пять карт подряд одной масти. Сливаются в «Роял-флеш».',
+        'Высшая комбинация: 10 J Q K A одной масти. 🏆 Победа!'
+    ];
 
+    function buildCombosList() {
+        var listEl = document.getElementById('combosList');
+        if (!listEl) return;
+
+        listEl.innerHTML = '';
+
+        for (var i = 0; i < COMBOS.length; i++) {
+            var combo = COMBOS[i];
+
+            var row = document.createElement('div');
+            row.className = 'combo-row';
+            row.setAttribute('data-level', String(i));
+
+            // Картинка
+            var img = document.createElement('img');
+            img.className = 'row-img';
+            img.src = combo.img || '';
+            img.alt = combo.name;
+            row.appendChild(img);
+
+            // Информация
+            var info = document.createElement('div');
+            info.className = 'row-info';
+
+            var name = document.createElement('div');
+            name.className = 'row-name';
+            name.textContent = combo.name;
+            info.appendChild(name);
+
+            var desc = document.createElement('div');
+            desc.className = 'row-desc';
+            desc.textContent = COMBO_DESCRIPTIONS[i] || '';
+            info.appendChild(desc);
+
+            row.appendChild(info);
+
+            // Значение
+            var value = document.createElement('div');
+            value.className = 'row-value';
+            value.textContent = combo.value;
+            row.appendChild(value);
+
+            listEl.appendChild(row);
+        }
+    }
+
+    // ---- Управление модальным окном ----
+    function openCombosModal() {
+        var modal = document.getElementById('combosModal');
+        if (!modal) return;
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCombosModal() {
+        var modal = document.getElementById('combosModal');
+        if (!modal) return;
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // ---- Слушатели ----
+    var combosBtn = document.getElementById('combosBtn');
+    var combosClose = document.getElementById('combosClose');
+    var combosBackdrop = document.getElementById('combosBackdrop');
+
+    if (combosBtn) {
+        combosBtn.addEventListener('click', openCombosModal);
+    }
+    if (combosClose) {
+        combosClose.addEventListener('click', closeCombosModal);
+    }
+    if (combosBackdrop) {
+        combosBackdrop.addEventListener('click', closeCombosModal);
+    }
+
+    // Закрытие по Esc
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeCombosModal();
+    });
+
+    // Собираем список при старте
+    buildCombosList();
     // ============================================================
     // СЕТКА (GRID LAYER)
     // ============================================================

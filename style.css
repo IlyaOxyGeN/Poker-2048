@@ -7,8 +7,15 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body {
+    height: 100%;
+    overflow: hidden;              /* запрещаем прокрутку страницы */
+    overscroll-behavior: none;     /* запрещаем "резиновый" отскок */
+}
+
 body {
     min-height: 100vh;
+    min-height: 100dvh;            /* на мобильных = реальная высота экрана */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,59 +23,70 @@ body {
     font-family: Georgia, serif;
     background: radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 45%, var(--felt-dark) 100%);
     color: #fff;
-    padding: 20px;
+    padding: 8px;
     user-select: none;
-    overflow-x: hidden;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;   /* убираем синюю подсветку тапа */
+    touch-action: manipulation;                 /* убираем 300ms задержку тапа */
 }
 
 h1 {
-    font-size: 34px;
+    font-size: clamp(20px, 5.5vw, 34px);
     letter-spacing: 2px;
     color: var(--gold);
     text-shadow: 0 2px 6px #000;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    text-align: center;
 }
 
 .subtitle {
-    font-size: 13px;
+    font-size: clamp(10px, 2.8vw, 13px);
     opacity: .85;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     letter-spacing: 1px;
     text-align: center;
+    padding: 0 10px;
 }
 
 .hud {
     display: flex;
-    gap: 20px;
+    gap: clamp(6px, 2vw, 20px);
     align-items: center;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
+    margin-bottom: 10px;
+    flex-wrap: nowrap;
     justify-content: center;
+    width: 100%;
+    max-width: 460px;
+    padding: 0 4px;
 }
 
 .score-box {
     background: rgba(0, 0, 0, .35);
     border: 2px solid var(--gold);
     border-radius: 8px;
-    padding: 8px 18px;
+    padding: 4px 10px;
     text-align: center;
-    min-width: 110px;
+    min-width: clamp(58px, 18vw, 110px);
+    flex: 1;
+    max-width: 130px;
 }
-.score-box .label { font-size: 11px; letter-spacing: 2px; opacity: .8; }
-.score-box .value { font-size: 22px; font-weight: bold; color: var(--gold); }
+.score-box .label { font-size: clamp(8px, 2vw, 11px); letter-spacing: 1.5px; opacity: .8; }
+.score-box .value { font-size: clamp(14px, 3.6vw, 22px); font-weight: bold; color: var(--gold); }
 
 button {
     background: linear-gradient(180deg, #f5d76e, #b8860b);
     color: #1a1a1a;
     border: none;
-    padding: 10px 20px;
+    padding: 8px 14px;
     font-family: inherit;
     font-weight: bold;
+    font-size: clamp(11px, 2.6vw, 14px);
     letter-spacing: 1px;
     border-radius: 8px;
     cursor: pointer;
     box-shadow: 0 4px 0 #6b4e00, 0 6px 12px rgba(0, 0, 0, .5);
     transition: transform .1s;
+    white-space: nowrap;
 }
 button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
 
@@ -76,72 +94,75 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
 .board {
     position: relative;
     background: radial-gradient(circle at 50% 40%, #1a7d40 0%, #0a4a20 100%);
-    border: 10px solid #5a3a12;
-    border-radius: 18px;
-    padding: 12px;
+    border: clamp(4px, 1.2vw, 10px) solid #5a3a12;
+    border-radius: clamp(10px, 2.5vw, 18px);
+    padding: clamp(4px, 1.5vw, 12px);
     box-shadow:
         inset 0 0 40px rgba(0, 0, 0, .6),
-        0 0 0 3px var(--gold),
+        0 0 0 2px var(--gold),
         0 12px 40px rgba(0, 0, 0, .7);
     display: grid;
-    grid-template-columns: repeat(4, 110px);
-    grid-template-rows: repeat(4, 130px);
-    gap: 10px;
-    isolation: isolate;   /* создаёт контекст наложения */
+    grid-template-columns: repeat(4, min(19vw, 88px));
+    grid-template-rows: repeat(4, min(23vw, 104px));
+    gap: clamp(3px, 1.2vw, 10px);
+    isolation: isolate;
+    touch-action: none;            /* важно: не даём браузеру скроллить при свайпах */
 }
 
 .cell {
     background: rgba(0, 0, 0, .18);
-    border-radius: 12px;
+    border-radius: clamp(6px, 1.5vw, 12px);
     box-shadow: inset 0 0 12px rgba(0, 0, 0, .4);
     position: relative;
-    z-index: 1;          
-    overflow: visible;  
+    z-index: 1;
+    overflow: visible;
 }
 
 /* ---------- CARD ---------- */
 .card {
     position: absolute;
     inset: 0;
-    border-radius: 12px;
+    border-radius: clamp(6px, 1.5vw, 12px);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 10px 8px;
+    padding: clamp(4px, 1vw, 10px);
     font-family: Georgia, serif;
     text-align: center;
     will-change: transform;
-    transition: transform .32s cubic-bezier(.4, 0, .2, 1);
-    z-index: 2;          /* ВСЕГДА выше ячейки */
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+    z-index: 2;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
-/* Появление НОВЫХ карт (вешается только через JS-класс) */
 .card.card-new {
-    animation: card-in .4s cubic-bezier(.2, .9, .3, 1);
+    animation: card-in .35s cubic-bezier(.2, .9, .3, 1);
 }
 @keyframes card-in {
-    0%   { opacity: 0; transform: scale(.5); }
-    60%  { opacity: 1; transform: scale(1.04); }
+    0%   { opacity: 0; transform: scale(.55); }
+    60%  { opacity: 1; transform: scale(1.04
+
+
+); }
     100% { opacity: 1; transform: scale(1); }
 }
 
-/* Пульс при слиянии */
 .card.merge {
-    animation: merge-pop .55s cubic-bezier(.2, .9, .3, 1);
-    z-index:50;
+    animation: merge-pop .5s cubic-bezier(.2, .9, .3, 1);
+    z-index: 50;
 }
 @keyframes merge-pop {
     0%   { transform: scale(1); }
-    50%  { transform: scale(1.15); }
+    50%  { transform: scale(1.12); }
     100% { transform: scale(1); }
 }
 
-/* Телепорт — временно отключает transition для FLIP */
 .card.teleport {
     transition: none !important;
     animation: none !important;
-    z-index:100 !important;
+    z-index: 100 !important;
 }
 
 /* ---------- Уровни ---------- */
@@ -150,10 +171,7 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
 .card.lvl2 { background: linear-gradient(160deg, #ffe9a8, #e9c94c); color: #2a1e00; }
 .card.lvl3 { background: linear-gradient(160deg, #f5c844, #b98b16); color: #1e1400; }
 .card.lvl4 { background: linear-gradient(160deg, #d4af37, #8b6914); color: #fff; text-shadow: 0 1px 3px #000; }
-.card.lvl5 { background: linear-gradient(160deg, #d88a3f, #a0431a); color: #fff; text-shad
-
-
-ow: 0 1px 3px #000; }
+.card.lvl5 { background: linear-gradient(160deg, #d88a3f, #a0431a); color: #fff; text-shadow: 0 1px 3px #000; }
 .card.lvl6 {
     background: linear-gradient(160deg, #c42e2e, #7a1010);
     color: #fff; text-shadow: 0 1px 4px #000;
@@ -191,31 +209,32 @@ ow: 0 1px 3px #000; }
 /* ---------- Содержимое карточки ---------- */
 .card .value {
     position: absolute;
-    top: 6px;
-    right: 9px;
-    font-size: 13px;
+    top: clamp(2px, .6vw, 6px);
+    right: clamp(3px, .8vw, 9px);
+    font-size: clamp(8px, 2vw, 13px);
     font-weight: bold;
     opacity: .75;
 }
 
 .card .combo-name {
-    font-size: 15px;
+    font-size: clamp(9px, 2.4vw, 15px);
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: .5px;
     line-height: 1.1;
     text-transform: uppercase;
-    padding: 0 4px;
+    padding: 0 2px;
     white-space: nowrap;
     overflow: hidden;
+    max-width: 100%;
 }
 
-.card.lvl0 .combo-name { font-size: 12px; letter-spacing: 0.5px; }
-.card.lvl2 .combo-name { font-size: 13px; letter-spacing: 0; }
+.card.lvl0 .combo-name { font-size: clamp(8px, 2vw, 12px); letter-spacing: 0; }
+.card.lvl2 .combo-name { font-size: clamp(8px, 2vw, 13px); letter-spacing: 0; }
 
 .card .emoji {
-    font-size: 34px;
+    font-size: clamp(18px, 4.5vw, 34px);
     line-height: 1;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 /* ---------- GAME OVER ---------- */
@@ -223,18 +242,18 @@ ow: 0 1px 3px #000; }
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, .82);
-    border-radius: 18px;
+    border-radius: clamp(10px, 2.5vw, 18px);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 14px;
     z-index: 10;
-    font-size: 26px;
+    font-size: clamp(16px, 4vw, 26px);
     color: var(--gold);
     letter-spacing: 2px;
     text-align: center;
-    padding: 20px;
+    padding: 14px;
     animation: fade-in .35s ease-out;
 }
 @keyframes fade-in {
@@ -243,25 +262,42 @@ ow: 0 1px 3px #000; }
 }
 
 .hint {
-    margin-top: 16px;
-    font-size: 12px;
+    margin-top: 10px;
+    font-size: clamp(9px, 2.4vw, 12px);
     opacity: .7;
-    letter-spacing: 1px;
+    letter-spacing: .5px;
     text-align: center;
+    padding: 0 10px;
 }
 
-/* ---------- MOBILE ---------- */
-max-width: 560px {
+/* ---------- Очень узкие экраны ---------- */
+max-width: 360px {
+    .hud { gap: 4px; }
+    .score-box { padding: 3px 6px; }
     .board {
-        grid-template-columns: repeat(4, 74px);
-        grid-template-rows: repeat(4, 96px);
-        gap: 6px;
-        padding: 8px;
-        border-width: 6px;
+        grid-template-columns: repeat(4, min(21vw, 72px));
+        grid-template-rows: repeat(4, min(25vw, 86px));
+        gap: 3px;
     }
-    h1 { font-size: 22px; }
-    .card .combo-name { font-size: 11px; }
-    .card.lvl0 .combo-name { font-size: 10px; }
 }
+
+/* ---------- Альбомная ориентация на телефоне ---------- */
+@media (orientat
+
+
+ion: landscape) and (max-height: 500px) {
+    h1 { font-size: 16px; margin-bottom: 2px; }
+    .subtitle { display: none; }
+    .hud { margin-bottom: 4px; }
+    .board {
+        grid-template-columns: repeat(4, min(11vh, 70px));
+        grid-template-rows: repeat(4, min(13vh, 82px));
+        gap: 3px;
+    }
+    .hint { display: none; }
+}
+
+
+
 
 

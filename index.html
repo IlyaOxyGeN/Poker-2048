@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker 2048</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>♠ POKER 2048 ♥</h1>
+    <div class="subtitle">Покер любит удачливых, проверь удачу и собери Флеш Роял</div>
+
+    <div class="hud">
+        <div class="score-box">
+            <div class="label">SCORE</div>
+            <div class="value" id="score">0</div>
+        </div>
+        <div class="score-box">
+            <div class="label">BEST</div>
+            <div class="value" id="best">0</div>
+        </div>
+        <button id="newGame">Новая игра</button>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="hint">Стрелки или WASD — двигать, R — заново</div>
+
+    <script src="script.js"></script>
+</body>
+</html>

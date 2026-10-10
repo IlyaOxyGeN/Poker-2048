@@ -1,0 +1,267 @@
+:root {
+    --felt-dark: #0b3d1e;
+    --felt: #14632f;
+    --felt-light: #1f7a3c;
+    --gold: #d4af37;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Georgia, serif;
+    background: radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 45%, var(--felt-dark) 100%);
+    color: #fff;
+    padding: 20px;
+    user-select: none;
+    overflow-x: hidden;
+}
+
+h1 {
+    font-size: 34px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-shadow: 0 2px 6px #000;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    font-size: 13px;
+    opacity: .85;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.hud {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.score-box {
+    background: rgba(0, 0, 0, .35);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    padding: 8px 18px;
+    text-align: center;
+    min-width: 110px;
+}
+.score-box .label { font-size: 11px; letter-spacing: 2px; opacity: .8; }
+.score-box .value { font-size: 22px; font-weight: bold; color: var(--gold); }
+
+button {
+    background: linear-gradient(180deg, #f5d76e, #b8860b);
+    color: #1a1a1a;
+    border: none;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #6b4e00, 0 6px 12px rgba(0, 0, 0, .5);
+    transition: transform .1s;
+}
+button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
+
+/* ---------- BOARD ---------- */
+.board {
+    position: relative;
+    background: radial-gradient(circle at 50% 40%, #1a7d40 0%, #0a4a20 100%);
+    border: 10px solid #5a3a12;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow:
+        inset 0 0 40px rgba(0, 0, 0, .6),
+        0 0 0 3px var(--gold),
+        0 12px 40px rgba(0, 0, 0, .7);
+    display: grid;
+    grid-template-columns: repeat(4, 110px);
+    grid-template-rows: repeat(4, 130px);
+    gap: 10px;
+    isolation: isolate;   /* создаёт контекст наложения */
+}
+
+.cell {
+    background: rgba(0, 0, 0, .18);
+    border-radius: 12px;
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, .4);
+    position: relative;
+    z-index: 1;          
+    overflow: visible;  
+}
+
+/* ---------- CARD ---------- */
+.card {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 8px;
+    font-family: Georgia, serif;
+    text-align: center;
+    will-change: transform;
+    transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+    z-index: 2;          /* ВСЕГДА выше ячейки */
+}
+
+/* Появление НОВЫХ карт (вешается только через JS-класс) */
+.card.card-new {
+    animation: card-in .4s cubic-bezier(.2, .9, .3, 1);
+}
+@keyframes card-in {
+    0%   { opacity: 0; transform: scale(.5); }
+    60%  { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Пульс при слиянии */
+.card.merge {
+    animation: merge-pop .55s cubic-bezier(.2, .9, .3, 1);
+    z-index:50;
+}
+@keyframes merge-pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* Телепорт — временно отключает transition для FLIP */
+.card.teleport {
+    transition: none !important;
+    animation: none !important;
+    z-index:100 !important;
+}
+
+/* ---------- Уровни ---------- */
+.card.lvl0 { background: linear-gradient(160deg, #fbfbf3, #e4ddc2); color: #2a2a2a; }
+.card.lvl1 { background: linear-gradient(160deg, #fdf6d3, #ead48a); color: #2a1e00; }
+.card.lvl2 { background: linear-gradient(160deg, #ffe9a8, #e9c94c); color: #2a1e00; }
+.card.lvl3 { background: linear-gradient(160deg, #f5c844, #b98b16); color: #1e1400; }
+.card.lvl4 { background: linear-gradient(160deg, #d4af37, #8b6914); color: #fff; text-shadow: 0 1px 3px #000; }
+.card.lvl5 { background: linear-gradient(160deg, #d88a3f, #a0431a); color: #fff; text-shad
+
+
+ow: 0 1px 3px #000; }
+.card.lvl6 {
+    background: linear-gradient(160deg, #c42e2e, #7a1010);
+    color: #fff; text-shadow: 0 1px 4px #000;
+    box-shadow: 0 0 22px rgba(255, 80, 80, .55);
+}
+.card.lvl7 {
+    background: linear-gradient(160deg, #8b2ea1, #4a1069 60%, #d4af37 100%);
+    color: #fff; text-shadow: 0 1px 4px #000;
+    box-shadow: 0 0 28px 4px rgba(180, 60, 200, .7);
+}
+.card.lvl8 {
+    background: linear-gradient(160deg, #ffe98a, #d4af37 50%, #fff4c2 100%);
+    color: #3a2a00;
+    box-shadow: 0 0 34px 8px rgba(255, 215, 0, .95);
+    animation: gold-pulse 1.6s ease-in-out infinite;
+}
+@keyframes gold-pulse {
+    0%, 100% { box-shadow: 0 0 30px 6px rgba(255, 215, 0, .85); }
+    50%      { box-shadow: 0 0 46px 14px rgba(255, 235, 130, 1); }
+}
+
+.card.lvl9 {
+    background: linear-gradient(135deg, #ff5f6d, #ffc371, #ffe98a, #a8e063, #56ab2f, #3ec6e0, #8b2ea1, #ff5f6d);
+    background-size: 400% 400%;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .9);
+    animation: royal-flow 4s ease infinite;
+    box-shadow: 0 0 50px 16px rgba(255, 215, 0, .9);
+}
+@keyframes royal-flow {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+}
+
+/* ---------- Содержимое карточки ---------- */
+.card .value {
+    position: absolute;
+    top: 6px;
+    right: 9px;
+    font-size: 13px;
+    font-weight: bold;
+    opacity: .75;
+}
+
+.card .combo-name {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.card.lvl0 .combo-name { font-size: 12px; letter-spacing: 0.5px; }
+.card.lvl2 .combo-name { font-size: 13px; letter-spacing: 0; }
+
+.card .emoji {
+    font-size: 34px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+/* ---------- GAME OVER ---------- */
+.game-over {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, .82);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 10;
+    font-size: 26px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 20px;
+    animation: fade-in .35s ease-out;
+}
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.hint {
+    margin-top: 16px;
+    font-size: 12px;
+    opacity: .7;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+/* ---------- MOBILE ---------- */
+max-width: 560px {
+    .board {
+        grid-template-columns: repeat(4, 74px);
+        grid-template-rows: repeat(4, 96px);
+        gap: 6px;
+        padding: 8px;
+        border-width: 6px;
+    }
+    h1 { font-size: 22px; }
+    .card .combo-name { font-size: 11px; }
+    .card.lvl0 .combo-name { font-size: 10px; }
+}
+
+

@@ -13,23 +13,22 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app">
-        <header class="header">
-            <h1>♠ Poker 2048 ♥</h1>
-            <p class="subtitle">Соберите 👑 Роял-флеш</p>
-        </header>
+   <!-- Модальное окно: справочник комбинаций -->
+<div class="modal" id="combosModal">
+    <div class="modal-backdrop" id="combosBackdrop"></div>
+    <div class="modal-content">
+        <button class="modal-close" id="combosClose" aria-label="Закрыть">✕</button>
 
-        <div class="hud">
-            <div class="score-box">
-                <div class="label">SCORE</div>
-                <div class="value" id="score">0</div>
-            </div>
-            <div class="score-box">
-                <div class="label">BEST</div>
-                <div class="value" id="best">0</div>
-            </div>
-            <button id="newGame">Новая</button>
+        <h2 class="modal-title">♠ Комбинации покера ♥</h2>
+        <p class="modal-subtitle">Собирайте одинаковые — они сливаются в следующую</p>
+
+        <div class="combos-list" id="combosList"></div>
+
+        <div class="modal-hint">
+            Цель — собрать 👑 <strong>Роял-флеш</strong> (1024 очка)
         </div>
+    </div>
+</div>
 
         <div class="board" id="board">
             <div class="grid-layer" id="gridLayer"></div>

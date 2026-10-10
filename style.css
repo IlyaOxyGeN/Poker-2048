@@ -399,14 +399,16 @@ h1 {
 }
 
 /* ============================================
-   АДАПТИВ (управляет размерами клеток через JS)
+   АДАПТИВ
    ============================================ */
 @media (max-width: 480px) {
     :root {
         --gap: 7px;
         --pad: 9px;
     }
-    /* ============================================
+}
+
+/* ============================================
    КНОПКА "КОМБИНАЦИИ"
    ============================================ */
 .btn-info {
@@ -452,8 +454,7 @@ h1 {
 
 .modal-content {
     position: relative;
-    background:
-        radial-gradient(circle at 50% 0%, #1a7d40 0%, #0b3d1e 100%);
+    background: radial-gradient(circle at 50% 0%, #1a7d40 0%, #0b3d1e 100%);
     border: 3px solid var(--gold);
     border-radius: 16px;
     box-shadow:
@@ -514,7 +515,6 @@ h1 {
     letter-spacing: .5px;
 }
 
-/* ---------- Список комбинаций ---------- */
 .combos-list {
     display: grid;
     grid-template-columns: 1fr;
@@ -541,16 +541,17 @@ h1 {
 .combo-row .row-img {
     width: 60px;
     height: 60px;
+    min-width: 60px;
+    max-width: 60px;
     object-fit: contain;
     border-radius: 8px;
     background: rgba(0, 0, 0, .25);
     padding: 3px;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
-.combo-row .row-info {
-    min-width: 0;
-}
+.combo-row .row-info { min-width: 0; }
 
 .combo-row .row-name {
     font-size: clamp(13px, 2.8vw, 15px);
@@ -574,7 +575,6 @@ h1 {
     padding-left: 8px;
 }
 
-/* Подсветка уровня — по возрастанию золота */
 .combo-row[data-level="6"] { border-color: rgba(212, 175, 55, .5); }
 .combo-row[data-level="7"] { border-color: rgba(180, 60, 200, .5); background: rgba(80, 20, 100, .2); }
 .combo-row[data-level="8"] {
@@ -615,10 +615,9 @@ h1 {
         gap: 8px;
         padding: 6px 8px;
     }
-    .combo-row .row-img { width: 48px; height: 48px; }
+    .combo-row .row-img { width: 48px; height: 48px; min-width: 48px; max-width: 48px; }
 }
 
-/* Скроллбар внутри модалки */
 .modal-content::-webkit-scrollbar { width: 8px; }
 .modal-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, .3); border-radius: 4px; }
 .modal-content::-webkit-scrollbar-thumb {
@@ -626,4 +625,3 @@ h1 {
     border-radius: 4px;
 }
 .modal-content::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, .8); }
-}

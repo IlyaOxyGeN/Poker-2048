@@ -413,7 +413,6 @@
         var go = boardEl.querySelector('.game-over');
         if (go) go.remove();
 
-        // Очищаем всё
         tilesLayer.innerHTML = '';
         tiles = {};
         grid = emptyGrid();

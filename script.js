@@ -23,30 +23,29 @@
     // ============================================================
     // DOM
     // ============================================================
-    var boardEl   = document.getElementById('board');
-    var gridLayer = document.getElementById('gridLayer');
-    var tilesLayer= document.getElementById('tilesLayer');
-    var scoreEl   = document.getElementById('score');
-    var bestEl    = document.getElementById('best');
+    var boardEl    = document.getElementById('board');
+    var gridLayer  = document.getElementById('gridLayer');
+    var tilesLayer = document.getElementById('tilesLayer');
+    var scoreEl    = document.getElementById('score');
+    var bestEl     = document.getElementById('best');
 
     // ============================================================
     // СОСТОЯНИЕ
     // ============================================================
-    var grid;                    // [r][c] = { id, level } | null
+    var grid;
     var score = 0;
     var best = parseInt(localStorage.getItem('poker2048-best') || '0', 10) || 0;
     var over = false;
     var won = false;
     var idCounter = 0;
-
-    // Реестр DOM-узлов плиток: id → HTMLElement
     var tiles = {};
 
-    // Размеры клетки (пересчитываются при resize)
+    // Размеры — вычисляются в recalcSizes()
     var cellW = 88;
     var cellH = 104;
-    var gap = 10;
-    var pad = 12;
+    var gap = 8;
+    var pad = 10;
+    var frame = 8;   // толщина рамки .board (должна совпадать с CSS)
 
     bestEl.textContent = best;
 
@@ -54,14 +53,54 @@
     // РАЗМЕРЫ
     // ============================================================
     function recalcSizes() {
-        // Читаем из CSS-переменных
-        var style = getComputedStyle(document.documentElement);
-        cellW = parseFloat(style.getPropertyValue('--cell-w')) || 88;
-        cellH = parseFloat(style.getPropertyValue('--cell-h')) || 104;
-        gap   = parseFloat(style.getPropertyValue('--gap'))   || 10;
-        pad   = parseFloat(style.getPropertyValue('--pad'))   || 12;
+        // 1. Доступная ширина
+        var maxBoardWidth;
+        if (window.innerWidth < 520) {
+            maxBoardWidth = window.innerWidth - 24;      // 12px с каждой стороны
+        } else {
+            maxBoardWidth = Math.min(window.innerWidth - 32, 460);
+        }
 
-        // Пересчитываем позиции всех плиток
+        // 2. Внутренние отступы — меньше на узких экранах
+        var padSize = maxBoardWidth < 380 ? 6 : 10;
+        var gapSize = maxBoardWidth < 380 ? 6 : 8;
+
+        // 3. Вычисляем ширину клетки
+        // boardW = 4*cellW + 3*gap + 2*pad + 2*frame
+        var availableW = maxBoardWidth - 2 * frame - 2 * padSize - 3 * gapSize;
+        var cw = Math.floor(availableW / 4);
+        var ch = Math.floor(cw * 1.18);   // карта чуть выше ширины
+
+        cellW = cw;
+        cellH = ch;
+        gap   = gapSize;
+        pad   = padSize;
+
+        // 4. CSS-переменные (для возможного использования в CSS)
+        var root = document.documentElement;
+        root.style.setProperty('--cell-w', cw + 'px');
+        root.style.setProperty('--cell-h', ch + 'px');
+        root.style.setProperty('--gap',    gapSize + 'px');
+        root.style.setProperty('--pad',    padSize + 'px');
+
+        // 5. Размеры board (без учёта border — он задаётся через box-sizing)
+        var innerW = 4 * cw + 3 * gapSize + 2 * padSize;
+        var innerH = 4 * ch + 3 * gapSize + 2 * padSize;
+
+        boardEl.style.width  = innerW + 'px';
+        boardEl.style.height = innerH + 'px';
+
+        // 6. Слои
+        gridLayer.style.width  = (4 * cw + 3 * gapSize) + 'px';
+        gridLayer.style.height = (4 * ch + 3 * gapSize) + 'px';
+        gridLayer.style.gridTemplateColumns = 'repeat(4, ' + cw + 'px)';
+        gridLayer.style.gridTemplateRows    = 'repeat(4, ' + ch + 'px)';
+        gridLayer.style.gap = gapSize + 'px';
+
+        tilesLayer.style.width  = (4 * cw + 3 * gapSize) + 'px';
+        tilesLayer.style.height = (4 * ch + 3 * gapSize) + 'px';
+
+        // 7. Пересчитываем позиции всех плиток
         for (var r = 0; r < SIZE; r++) {
             for (var c = 0; c < SIZE; c++) {
                 var card = grid && grid[r][c];
@@ -75,9 +114,10 @@
     function applyPosition(node, r, c, instant) {
         var x = c * (cellW + gap);
         var y = r * (cellH + gap);
-        // Сохраняем для keyframes
         node.style.setProperty('--tx', x + 'px');
         node.style.setProperty('--ty', y + 'px');
+        node.style.width  = cellW + 'px';
+        node.style.height = cellH + 'px';
 
         if (instant) {
             var oldTransition = node.style.transition;
@@ -119,7 +159,6 @@
         val.className = 'tile-value';
         node.appendChild(val);
 
-        // Текст/эмодзи внутри арта
         var emoji = document.createElement('div');
         emoji.className = 'tile-emoji';
         emoji.style.display = 'none';
@@ -191,17 +230,14 @@
         var card = { id: 'c' + (++idCounter), level: lvl };
         grid[pos.r][pos.c] = card;
 
-        // Создаём DOM
         var node = createTileNode(card.id, lvl);
         updateTileContent(node, lvl);
         tilesLayer.appendChild(node);
         tiles[card.id] = node;
 
-        // Позиционируем БЕЗ анимации, потом — анимация появления
         applyPosition(node, pos.r, pos.c, true);
         node.classList.add('tile-new');
 
-        // Снимаем класс после анимации
         setTimeout(function () {
             node.classList.remove('tile-new');
         }, 300);
@@ -216,10 +252,8 @@
         if (over || won) return;
 
         var before = serializeGrid();
-        var mergedTiles = []; // { node, newLevel, r, c }
-        var removedTiles = []; // id
+        var mergedTiles = [];
 
-        // Идём по линиям
         for (var li = 0; li < SIZE; li++) {
             var coords = [];
             for (var j = 0; j < SIZE; j++) {
@@ -231,24 +265,20 @@
                 coords.push({ r: r, c: c });
             }
 
-            // Собираем карты
             var items = [];
             for (var k = 0; k < coords.length; k++) {
                 var p = coords[k];
                 if (grid[p.r][p.c]) items.push(grid[p.r][p.c]);
             }
 
-            // Обрабатываем
             var out = [];
-            var mergedInfo = []; // параллельный массив: { sourceIds: [id1, id2] } или null
+            var mergedInfo = [];
             var idx = 0;
 
             while (idx < items.length) {
                 if (idx + 1 < items.length && canMerge(items[idx], items[idx + 1])) {
-                    // Слияние
                     var a = items[idx];
                     var b = items[idx + 1];
-                    // Новая карта — использует id от "a", уровень +1
                     var newCard = { id: a.id, level: a.level + 1 };
                     out.push(newCard);
                     mergedInfo.push({ source: b.id, newLevel: newCard.level });
@@ -261,12 +291,10 @@
                 }
             }
 
-            // Раскладываем
             for (var j2 = 0; j2 < coords.length; j2++) {
                 var pos = coords[j2];
                 if (j2 < out.length) {
                     grid[pos.r][pos.c] = out[j2];
-                    // Если было слияние — запоминаем
                     if (mergedInfo[j2]) {
                         mergedTiles.push({
                             id: out[j2].id,
@@ -284,38 +312,31 @@
 
         if (serializeGrid() === before) return;
 
-        // === АНИМАЦИЯ ДВИЖЕНИЯ ===
-        // Все существующие плитки двигаются к своим новым позициям
+        // Движение всех плиток
         for (var r2 = 0; r2 < SIZE; r2++) {
             for (var c2 = 0; c2 < SIZE; c2++) {
                 var card2 = grid[r2][c2];
                 if (!card2) continue;
                 var node2 = tiles[card2.id];
                 if (!node2) continue;
-                // Позиция уже правильная, если карта не двигалась — transition не сработает
                 applyPosition(node2, r2, c2, false);
             }
         }
 
-        // Слияния: таймер на удаление поглощённой плитки + обновление уровня
+        // Слияния
         for (var mi = 0; mi < mergedTiles.length; mi++) {
             (function (info) {
-                // Поглощённая плитка едет в ту же точку, потом удаляется
                 var absorbedNode = tiles[info.absorbedId];
                 if (absorbedNode) {
-                    // Она уже едет через applyPosition выше, но её позиция
-                    // в grid отсутствует — нужно задать явно
                     applyPosition(absorbedNode, info.r, info.c, false);
                 }
 
                 setTimeout(function () {
-                    // Удаляем поглощённую
                     if (absorbedNode && absorbedNode.parentNode) {
                         absorbedNode.parentNode.removeChild(absorbedNode);
                     }
                     delete tiles[info.absorbedId];
 
-                    // Обновляем выжившую
                     var winnerNode = tiles[info.id];
                     if (winnerNode) {
                         updateTileContent(winnerNode, info.newLevel);
@@ -328,13 +349,11 @@
             })(mergedTiles[mi]);
         }
 
-        // Новая случайная карта
         setTimeout(function () {
             spawnRandomCard();
             checkEnd();
         }, 170);
 
-        // Обновляем счёт и best
         if (score > best) {
             best = score;
             localStorage.setItem('poker2048-best', String(best));
@@ -366,7 +385,6 @@
     }
 
     function checkEnd() {
-        // Проверка победы
         for (var r = 0; r < SIZE; r++) {
             for (var c = 0; c < SIZE; c++) {
                 if (grid[r][c] && grid[r][c].level === MAX_LEVEL) {
@@ -376,7 +394,6 @@
                 }
             }
         }
-        // Проверка проигрыша
         if (!canMove()) {
             over = true;
             showGameOver('ИГРА ОКОНЧЕНА');
@@ -409,7 +426,6 @@
     // INIT
     // ============================================================
     function init() {
-        // Убираем overlay если есть
         var go = boardEl.querySelector('.game-over');
         if (go) go.remove();
 
@@ -424,6 +440,7 @@
         scoreEl.textContent = score;
         bestEl.textContent = best;
 
+        recalcSizes();
         spawnRandomCard();
         spawnRandomCard();
     }
@@ -473,16 +490,18 @@
         touchStart = null;
     });
 
-    // ---- Кнопка ----
     document.getElementById('newGame').addEventListener('click', init);
 
-    // ---- Resize ----
     var resizeTimeout = null;
     window.addEventListener('resize', function () {
         if (resizeTimeout) clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(recalcSizes, 100);
     });
 
-     buildGridLayer();
+    // ============================================================
+    // СТАРТ
+    // ============================================================
+    buildGridLayer();
+    recalcSizes();
     init();
 })();

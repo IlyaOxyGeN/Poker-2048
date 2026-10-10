@@ -331,21 +331,35 @@
     });
 
     var touchStart = null;
-    boardEl.addEventListener('touchstart', function (e) {
-        var t = e.touches[0];
-        touchStart = { x: t.clientX, y: t.clientY };
-    }, { passive: true });
 
-    boardEl.addEventListener('touchend', function (e) {
-        if (!touchStart) return;
-        var t = e.changedTouches[0];
-        var dx = t.clientX - touchStart.x;
-        var dy = t.clientY - touchStart.y;
-        if (Math.abs(dx) < 30 && Math.abs(dy) < 30) { touchStart = null; return; }
-        if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'r' : 'l');
-        else move(dy > 0 ? 'd' : 'u');
-        touchStart = null;
-    });
+boardEl.addEventListener('touchstart', function (e) {
+    if (e.touches.length > 1) return;    // игнорируем мультитач (зум двумя пальцами)
+    var t = e.touches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+
+boardEl.addEventListener('touchmove', function (e) {
+    if (touchStart) e.preventDefault();   // блокируем скролл, когда играем
+}, { passive: false });
+
+boardEl.addEventListener('touchend', function (e) {
+    if (!touchStart) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchStart.x;
+    var dy = t.clientY - touchStart.y;
+    touchStart = null;
+
+    if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;  // слишком короткий свайп
+    if (Math.abs(dx) > Math.abs(dy)) {
+        move(dx > 0 ? 'r' : 'l');
+    } else {
+        move(dy > 0 ? 'd' : 'u');
+    }
+}, { passive: true });
+
+boardEl.addEventListener('touchcancel', function () {
+    touchStart = null;
+});
 
     document.getElementById('newGame').addEventListener('click', init);
 

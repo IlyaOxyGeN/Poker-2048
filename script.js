@@ -52,55 +52,55 @@
     // ============================================================
     // РАЗМЕРЫ
     // ============================================================
-    function recalcSizes() {
+       function recalcSizes() {
         // 1. Доступная ширина
         var maxBoardWidth;
         if (window.innerWidth < 520) {
-            maxBoardWidth = window.innerWidth - 24;      // 12px с каждой стороны
+            maxBoardWidth = window.innerWidth - 24;
         } else {
             maxBoardWidth = Math.min(window.innerWidth - 32, 460);
         }
 
-        // 2. Внутренние отступы — меньше на узких экранах
+        // 2. Внутренние отступы
         var padSize = maxBoardWidth < 380 ? 6 : 10;
         var gapSize = maxBoardWidth < 380 ? 6 : 8;
 
-        // 3. Вычисляем ширину клетки
-        // boardW = 4*cellW + 3*gap + 2*pad + 2*frame
+        // 3. Размер клетки
+        // boardInner = 4*cellW + 3*gap + 2*pad  (без рамки)
         var availableW = maxBoardWidth - 2 * frame - 2 * padSize - 3 * gapSize;
         var cw = Math.floor(availableW / 4);
-        var ch = Math.floor(cw * 1.18);   // карта чуть выше ширины
+        var ch = Math.floor(cw * 1.18);
 
         cellW = cw;
         cellH = ch;
         gap   = gapSize;
         pad   = padSize;
 
-        // 4. CSS-переменные (для возможного использования в CSS)
-        var root = document.documentElement;
-        root.style.setProperty('--cell-w', cw + 'px');
-        root.style.setProperty('--cell-h', ch + 'px');
-        root.style.setProperty('--gap',    gapSize + 'px');
-        root.style.setProperty('--pad',    padSize + 'px');
-
-        // 5. Размеры board (без учёта border — он задаётся через box-sizing)
+        // 4. Размеры board
         var innerW = 4 * cw + 3 * gapSize + 2 * padSize;
         var innerH = 4 * ch + 3 * gapSize + 2 * padSize;
 
         boardEl.style.width  = innerW + 'px';
         boardEl.style.height = innerH + 'px';
 
-        // 6. Слои
-        gridLayer.style.width  = (4 * cw + 3 * gapSize) + 'px';
-        gridLayer.style.height = (4 * ch + 3 * gapSize) + 'px';
+        // 5. Слои — задаём И размер, И позицию
+        var gridW = 4 * cw + 3 * gapSize;
+        var gridH = 4 * ch + 3 * gapSize;
+
+        gridLayer.style.top    = padSize + 'px';
+        gridLayer.style.left   = padSize + 'px';
+        gridLayer.style.width  = gridW + 'px';
+        gridLayer.style.height = gridH + 'px';
         gridLayer.style.gridTemplateColumns = 'repeat(4, ' + cw + 'px)';
         gridLayer.style.gridTemplateRows    = 'repeat(4, ' + ch + 'px)';
         gridLayer.style.gap = gapSize + 'px';
 
-        tilesLayer.style.width  = (4 * cw + 3 * gapSize) + 'px';
-        tilesLayer.style.height = (4 * ch + 3 * gapSize) + 'px';
+        tilesLayer.style.top    = padSize + 'px';
+        tilesLayer.style.left   = padSize + 'px';
+        tilesLayer.style.width  = gridW + 'px';
+        tilesLayer.style.height = gridH + 'px';
 
-        // 7. Пересчитываем позиции всех плиток
+        // 6. Пересчитываем позиции плиток
         for (var r = 0; r < SIZE; r++) {
             for (var c = 0; c < SIZE; c++) {
                 var card = grid && grid[r][c];
@@ -109,6 +109,14 @@
                 }
             }
         }
+
+        // 7. Диагностика (убери потом)
+        console.log('SIZES',
+            '| cw:', cw, 'ch:', ch,
+            '| gap:', gapSize, 'pad:', padSize,
+            '| board:', innerW + '×' + innerH,
+            '| grid:', gridW + '×' + gridH
+        );
     }
 
     function applyPosition(node, r, c, instant) {

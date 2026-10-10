@@ -411,4 +411,82 @@
     function init() {
         // Убираем overlay если есть
         var go = boardEl.querySelector('.game-over');
-        if (go
+        if (go) go.remove();
+
+        // Очищаем всё
+        tilesLayer.innerHTML = '';
+        tiles = {};
+        grid = emptyGrid();
+        score = 0;
+        over = false;
+        won = false;
+        idCounter = 0;
+
+        scoreEl.textContent = score;
+        bestEl.textContent = best;
+
+        spawnRandomCard();
+        spawnRandomCard();
+    }
+
+    // ============================================================
+    // УПРАВЛЕНИЕ
+    // ============================================================
+    var keyMap = {
+        ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd',
+        a: 'l', d: 'r', w: 'u', s: 'd',
+        A: 'l', D: 'r', W: 'u', S: 'd',
+        '\u0444': 'l', '\u0432': 'r', '\u0446': 'u', '\u044b': 'd'
+    };
+
+    document.addEventListener('keydown', function (e) {
+        var dir = keyMap[e.key];
+        if (dir) { e.preventDefault(); move(dir); }
+        if (e.key === 'r' || e.key === 'R' || e.key === '\u043a' || e.key === '\u041a') init();
+    });
+
+    // ---- Свайпы ----
+    var touchStart = null;
+
+    boardEl.addEventListener('touchstart', function (e) {
+        if (e.touches.length > 1) return;
+        var t = e.touches[0];
+        touchStart = { x: t.clientX, y: t.clientY };
+    }, { passive: true });
+
+    boardEl.addEventListener('touchmove', function (e) {
+        if (touchStart) e.preventDefault();
+    }, { passive: false });
+
+    boardEl.addEventListener('touchend', function (e) {
+        if (!touchStart) return;
+        var t = e.changedTouches[0];
+        var dx = t.clientX - touchStart.x;
+        var dy = t.clientY - touchStart.y;
+        touchStart = null;
+
+        if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+        if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'r' : 'l');
+        else move(dy > 0 ? 'd' : 'u');
+    }, { passive: true });
+
+    boardEl.addEventListener('touchcancel', function () {
+        touchStart = null;
+    });
+
+    // ---- Кнопка ----
+    document.getElementById('newGame').addEventListener('click', init);
+
+    // ---- Resize ----
+    var resizeTimeout = null;
+    window.addEventListener('resize', function () {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(recalcSizes, 100);
+    });
+
+    // ============================================================
+    // СТАРТ
+    // ============================================================
+    buildGridLayer();
+    init();
+})();

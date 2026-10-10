@@ -1,79 +1,105 @@
+/* ============================================
+   ПЕРЕМЕННЫЕ
+   ============================================ */
 :root {
     --felt-dark: #0b3d1e;
     --felt: #14632f;
     --felt-light: #1f7a3c;
     --gold: #d4af37;
+
+    /* Размеры клетки — управляются через JS, но с fallback */
+    --cell-w: 88px;
+    --cell-h: 104px;
+    --gap: 10px;
+    --pad: 12px;
+
+    /* Скорость анимации движения */
+    --move-duration: 150ms;
+    --move-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
     height: 100%;
-    overflow: hidden;              /* запрещаем прокрутку страницы */
-    overscroll-behavior: none;     /* запрещаем "резиновый" отскок */
+    overflow: hidden;
+    overscroll-behavior: none;
 }
 
 body {
-    min-height: 100vh;
-    min-height: 100dvh;            /* на мобильных = реальная высота экрана */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: Georgia, serif;
+    font-family: Georgia, 'Times New Roman', serif;
     background: radial-gradient(ellipse at center, var(--felt-light) 0%, var(--felt) 45%, var(--felt-dark) 100%);
     color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 8px;
     user-select: none;
     -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;   /* убираем синюю подсветку тапа */
-    touch-action: manipulation;                 /* убираем 300ms задержку тапа */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
+.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.header { text-align: center; }
+
 h1 {
-    font-size: clamp(20px, 5.5vw, 34px);
+    font-size: clamp(20px, 5.5vw, 32px);
     letter-spacing: 2px;
     color: var(--gold);
     text-shadow: 0 2px 6px #000;
-    margin-bottom: 4px;
-    text-align: center;
+    margin-bottom: 2px;
 }
 
 .subtitle {
-    font-size: clamp(10px, 2.8vw, 13px);
-    opacity: .85;
-    margin-bottom: 10px;
+    font-size: clamp(10px, 2.6vw, 13px);
+    opacity: .8;
     letter-spacing: 1px;
-    text-align: center;
-    padding: 0 10px;
 }
 
+/* ============================================
+   HUD
+   ============================================ */
 .hud {
     display: flex;
-    gap: clamp(6px, 2vw, 20px);
+    gap: clamp(6px, 2vw, 16px);
     align-items: center;
-    margin-bottom: 10px;
-    flex-wrap: nowrap;
     justify-content: center;
     width: 100%;
-    max-width: 460px;
-    padding: 0 4px;
 }
 
 .score-box {
     background: rgba(0, 0, 0, .35);
     border: 2px solid var(--gold);
     border-radius: 8px;
-    padding: 4px 10px;
+    padding: 4px 12px;
     text-align: center;
-    min-width: clamp(58px, 18vw, 110px);
+    min-width: clamp(60px, 18vw, 100px);
     flex: 1;
     max-width: 130px;
 }
-.score-box .label { font-size: clamp(8px, 2vw, 11px); letter-spacing: 1.5px; opacity: .8; }
-.score-box .value { font-size: clamp(14px, 3.6vw, 22px); font-weight: bold; color: var(--gold); }
+.score-box .label {
+    font-size: clamp(8px, 2vw, 11px);
+    letter-spacing: 1.5px;
+    opacity: .8;
+}
+.score-box .value {
+    font-size: clamp(14px, 3.6vw, 22px);
+    font-weight: bold;
+    color: var(--gold);
+}
 
-button {
+#newGame {
     background: linear-gradient(180deg, #f5d76e, #b8860b);
     color: #1a1a1a;
     border: none;
@@ -88,112 +114,150 @@ button {
     transition: transform .1s;
     white-space: nowrap;
 }
-button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
+#newGame:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
 
-/* ---------- BOARD ---------- */
+/* ============================================
+   BOARD
+   ============================================ */
 .board {
     position: relative;
     background: radial-gradient(circle at 50% 40%, #1a7d40 0%, #0a4a20 100%);
     border: clamp(4px, 1.2vw, 10px) solid #5a3a12;
     border-radius: clamp(10px, 2.5vw, 18px);
-    padding: clamp(4px, 1.5vw, 12px);
+    padding: var(--pad);
     box-shadow:
         inset 0 0 40px rgba(0, 0, 0, .6),
         0 0 0 2px var(--gold),
         0 12px 40px rgba(0, 0, 0, .7);
-    display: grid;
-    grid-template-columns: repeat(4, min(19vw, 88px));
-    grid-template-rows: repeat(4, min(23vw, 104px));
-    gap: clamp(3px, 1.2vw, 10px);
+    /* Размер задаётся через JS через CSS-переменные */
+    width: calc(4 * var(--cell-w) + 3 * var(--gap) + 2 * var(--pad));
+    height: calc(4 * var(--cell-h) + 3 * var(--gap) + 2 * var(--pad));
+    touch-action: none;
     isolation: isolate;
-    touch-action: none;            /* важно: не даём браузеру скроллить при свайпах */
 }
 
-.cell {
+/* ---------- Слой сетки (только фон) ---------- */
+.grid-layer {
+    position: absolute;
+    inset: var(--pad);
+    display: grid;
+    grid-template-columns: repeat(4, var(--cell-w));
+    grid-template-rows: repeat(4, var(--cell-h));
+    gap: var(--gap);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.grid-cell {
     background: rgba(0, 0, 0, .18);
     border-radius: clamp(6px, 1.5vw, 12px);
     box-shadow: inset 0 0 12px rgba(0, 0, 0, .4);
-    position: relative;
-    z-index: 1;
-    overflow: visible;
 }
 
-/* ---------- CARD ---------- */
-.card {
+/* ---------- Слой плиток ---------- */
+.tiles-layer {
     position: absolute;
-    inset: 0;
-    border-radius: clamp(6px, 1.5vw, 12px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: clamp(4px, 1vw, 10px);
-    font-family: Georgia, serif;
-    text-align: center;
-    will-change: transform;
-    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+    inset: var(--pad);
     z-index: 2;
+    pointer-events: none;
+    /* Внутри — карты с абсолютной позицией */
+}
+
+/* ============================================
+   TILE (плитка комбинации)
+   ============================================ */
+.tile {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--cell-w);
+    height: var(--cell-h);
+    /* Позиция через transform — браузер интерполирует сам */
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--move-duration) var(--move-ease);
+    will-change: transform;
+    border-radius: clamp(6px, 1.5vw, 12px);
+    /* Внутренние слои */
+    overflow: hidden;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
 }
 
-.card.card-new {
-    animation: card-in .35s cubic-bezier(.2, .9, .3, 1);
-}
-@keyframes card-in {
-    0%   { opacity: 0; transform: scale(.55); }
-    60%  { opacity: 1; transform: scale(1.04
-
-
-); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-.card.merge {
-    animation: merge-pop .5s cubic-bezier(.2, .9, .3, 1);
-    z-index: 50;
-}
-@keyframes merge-pop {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.12); }
-    100% { transform: scale(1); }
+/* Контейнер арта — сюда в будущем вставим <img> или <canvas> */
+.tile-art {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px;
+    font-family: Georgia, serif;
+    text-align: center;
+    /* Стили уровней навешиваются через .tile[data-level="N"] .tile-art */
 }
 
-.card.teleport {
-    transition: none !important;
-    animation: none !important;
-    z-index: 100 !important;
+/* Значение в углу */
+.tile-value {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: clamp(9px, 2.2vw, 13px);
+    font-weight: bold;
+    opacity: .75;
+    z-index: 3;
+    pointer-events: none;
 }
 
-/* ---------- Уровни ---------- */
-.card.lvl0 { background: linear-gradient(160deg, #fbfbf3, #e4ddc2); color: #2a2a2a; }
-.card.lvl1 { background: linear-gradient(160deg, #fdf6d3, #ead48a); color: #2a1e00; }
-.card.lvl2 { background: linear-gradient(160deg, #ffe9a8, #e9c94c); color: #2a1e00; }
-.card.lvl3 { background: linear-gradient(160deg, #f5c844, #b98b16); color: #1e1400; }
-.card.lvl4 { background: linear-gradient(160deg, #d4af37, #8b6914); color: #fff; text-shadow: 0 1px 3px #000; }
-.card.lvl5 { background: linear-gradient(160deg, #d88a3f, #a0431a); color: #fff; text-shadow: 0 1px 3px #000; }
-.card.lvl6 {
+/* Название комбинации */
+.tile-label {
+    font-size: clamp(9px, 2.4vw, 14px);
+    font-weight: bold;
+    letter-spacing: .5px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    padding: 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+/* Эмодзи для роял-флеша */
+.tile-emoji {
+    font-size: clamp(20px, 5vw, 36px);
+    line-height: 1;
+    margin-bottom: 2px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
+}
+
+/* ============================================
+   УРОВНИ (фон через .tile[data-level])
+   Здесь потом легко заменить на background-image
+   ============================================ */
+.tile[data-level="0"] .tile-art { background: linear-gradient(160deg, #fbfbf3, #e4ddc2); color: #2a2a2a; }
+.tile[data-level="1"] .tile-art { background: linear-gradient(160deg, #fdf6d3, #ead48a); color: #2a1e00; }
+.tile[data-level="2"] .tile-art { background: linear-gradient(160deg, #ffe9a8, #e9c94c); color: #2a1e00; }
+.tile[data-level="3"] .tile-art { background: linear-gradient(160deg, #f5c844, #b98b16); color: #1e1400; }
+.tile[data-level="4"] .tile-art { background: linear-gradient(160deg, #d4af37, #8b6914); color: #fff; text-shadow: 0 1px 3px #000; }
+.tile[data-level="5"] .tile-art { background: linear-gradient(160deg, #d88a3f, #a0431a); color: #fff; text-shadow: 0 1px 3px #000; }
+.tile[data-level="6"] .tile-art {
     background: linear-gradient(160deg, #c42e2e, #7a1010);
-    color: #fff; text-shadow: 0 1px 4px #000;
+    color: #fff;
+    text-shadow: 0 1px 4px #000;
     box-shadow: 0 0 22px rgba(255, 80, 80, .55);
 }
-.card.lvl7 {
+.tile[data-level="7"] .tile-art {
     background: linear-gradient(160deg, #8b2ea1, #4a1069 60%, #d4af37 100%);
-    color: #fff; text-shadow: 0 1px 4px #000;
+    color: #fff;
+    text-shadow: 0 1px 4px #000;
     box-shadow: 0 0 28px 4px rgba(180, 60, 200, .7);
 }
-.card.lvl8 {
+.tile[data-level="8"] .tile-art {
     background: linear-gradient(160deg, #ffe98a, #d4af37 50%, #fff4c2 100%);
     color: #3a2a00;
     box-shadow: 0 0 34px 8px rgba(255, 215, 0, .95);
-    animation: gold-pulse 1.6s ease-in-out infinite;
 }
-@keyframes gold-pulse {
-    0%, 100% { box-shadow: 0 0 30px 6px rgba(255, 215, 0, .85); }
-    50%      { box-shadow: 0 0 46px 14px rgba(255, 235, 130, 1); }
-}
-
-.card.lvl9 {
+.tile[data-level="9"] .tile-art {
     background: linear-gradient(135deg, #ff5f6d, #ffc371, #ffe98a, #a8e063, #56ab2f, #3ec6e0, #8b2ea1, #ff5f6d);
     background-size: 400% 400%;
     color: #fff;
@@ -206,38 +270,43 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
     50%      { background-position: 100% 50%; }
 }
 
-/* ---------- Содержимое карточки ---------- */
-.card .value {
-    position: absolute;
-    top: clamp(2px, .6vw, 6px);
-    right: clamp(3px, .8vw, 9px);
-    font-size: clamp(8px, 2vw, 13px);
-    font-weight: bold;
-    opacity: .75;
+/* ============================================
+   АНИМАЦИИ ПЛИТОК
+   ============================================ */
+
+/* Появление новой плитки */
+.tile.tile-new {
+    animation: tile-appear 220ms cubic-bezier(.2, .9, .3, 1);
+}
+@keyframes tile-appear {
+    0%   { opacity: 0; transform: translate3d(var(--tx), var(--ty), 0) scale(.4); }
+    60%  { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) scale(1.05); }
+    100% { opacity: 1; transform: translate3d(var(--tx), var(--ty), 0) scale(1); }
 }
 
-.card .combo-name {
-    font-size: clamp(9px, 2.4vw, 15px);
-    font-weight: bold;
-    letter-spacing: .5px;
-    line-height: 1.1;
-    text-transform: uppercase;
-    padding: 0 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 100%;
+/* Вспышка при слиянии */
+.tile.tile-merged .tile-art {
+    animation: tile-flash 300ms ease-out;
+}
+@keyframes tile-flash {
+    0%   { filter: brightness(1); }
+    40%  { filter: brightness(1.6) drop-shadow(0 0 14px rgba(255,215,0,.9)); }
+    100% { filter: brightness(1); }
 }
 
-.card.lvl0 .combo-name { font-size: clamp(8px, 2vw, 12px); letter-spacing: 0; }
-.card.lvl2 .combo-name { font-size: clamp(8px, 2vw, 13px); letter-spacing: 0; }
-
-.card .emoji {
-    font-size: clamp(18px, 4.5vw, 34px);
-    line-height: 1;
-    margin-bottom: 2px;
+/* Пульс при слиянии (легкий scale) */
+.tile.tile-merged {
+    animation: tile-pulse 300ms ease-out;
+}
+@keyframes tile-pulse {
+    0%   { transform: translate3d(var(--tx), var(--ty), 0) scale(1); }
+    50%  { transform: translate3d(var(--tx), var(--ty), 0) scale(1.12); }
+    100% { transform: translate3d(var(--tx), var(--ty), 0) scale(1); }
 }
 
-/* ---------- GAME OVER ---------- */
+/* ============================================
+   GAME OVER
+   ============================================ */
 .game-over {
     position: absolute;
     inset: 0;
@@ -248,56 +317,50 @@ button:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4e00; }
     align-items: center;
     justify-content: center;
     gap: 14px;
-    z-index: 10;
+    z-index: 100;
     font-size: clamp(16px, 4vw, 26px);
     color: var(--gold);
     letter-spacing: 2px;
     text-align: center;
     padding: 14px;
-    animation: fade-in .35s ease-out;
+    animation: fade-in 300ms ease-out;
 }
 @keyframes fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
 
+.game-over button {
+    background: linear-gradient(180deg, #f5d76e, #b8860b);
+    color: #1a1a1a;
+    border: none;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: clamp(12px, 3vw, 16px);
+    letter-spacing: 1px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #6b4e00;
+}
+.game-over button:active { transform: translateY(3px); }
+
+/* ============================================
+   HINT
+   ============================================ */
 .hint {
-    margin-top: 10px;
     font-size: clamp(9px, 2.4vw, 12px);
     opacity: .7;
     letter-spacing: .5px;
     text-align: center;
-    padding: 0 10px;
 }
 
-/* ---------- Очень узкие экраны ---------- */
-max-width: 360px {
-    .hud { gap: 4px; }
-    .score-box { padding: 3px 6px; }
-    .board {
-        grid-template-columns: repeat(4, min(21vw, 72px));
-        grid-template-rows: repeat(4, min(25vw, 86px));
-        gap: 3px;
+/* ============================================
+   АДАПТИВ (управляет размерами клеток через JS)
+   ============================================ */
+@media (max-width: 480px) {
+    :root {
+        --gap: 7px;
+        --pad: 9px;
     }
 }
-
-/* ---------- Альбомная ориентация на телефоне ---------- */
-@media (orientat
-
-
-ion: landscape) and (max-height: 500px) {
-    h1 { font-size: 16px; margin-bottom: 2px; }
-    .subtitle { display: none; }
-    .hud { margin-bottom: 4px; }
-    .board {
-        grid-template-columns: repeat(4, min(11vh, 70px));
-        grid-template-rows: repeat(4, min(13vh, 82px));
-        gap: 3px;
-    }
-    .hint { display: none; }
-}
-
-
-
-
-

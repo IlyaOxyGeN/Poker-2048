@@ -47,7 +47,7 @@
     ];
 
     // ============================================================
-    // DOM
+    // DOM-ЭЛЕМЕНТЫ
     // ============================================================
     var boardEl    = document.getElementById('board');
     var gridLayer  = document.getElementById('gridLayer');
@@ -55,6 +55,8 @@
     var scoreEl    = document.getElementById('score');
     var bestEl     = document.getElementById('best');
     var undoBtn    = document.getElementById('undoBtn');
+    var musicBtn   = document.getElementById('musicBtn');
+    var bgMusic    = document.getElementById('bgMusic');
 
     // ============================================================
     // СОСТОЯНИЕ
@@ -66,8 +68,6 @@
     var won = false;
     var idCounter = 0;
     var tiles = {};
-    
-    // Undo
     var previousState = null;
 
     var cellW = 88;
@@ -82,12 +82,7 @@
     // РАЗМЕРЫ
     // ============================================================
     function recalcSizes() {
-        var maxBoardWidth;
-        if (window.innerWidth < 520) {
-            maxBoardWidth = window.innerWidth - 24;
-        } else {
-            maxBoardWidth = Math.min(window.innerWidth - 32, 460);
-        }
+        var maxBoardWidth = window.innerWidth < 520 ? window.innerWidth - 24 : Math.min(window.innerWidth - 32, 460);
         var padSize = maxBoardWidth < 380 ? 6 : 10;
         var gapSize = maxBoardWidth < 380 ? 6 : 8;
 
@@ -145,62 +140,6 @@
             node.style.transition = oldTransition || '';
         } else {
             node.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
-        }
-    }
-
-    // ============================================================
-    // СПРАВОЧНИК И УПРАВЛЕНИЕ МОДАЛКОЙ
-    // ============================================================
-    function buildCombosList() {
-        var listEl = ent.getElementById('combosList');
-        if (!listEl) return;
-        listEl.innerHTML = '';
-        for (var i = 0; i < BASE_COMBOS.length; i++) {
-            var combo = BASE_COMBOS[i];
-            var row = ent.createElement('div');
-            row.className = 'combo-row';
-            row.setAttribute('data-level', String(i));
-            
-            var img = ent.createElement('img');
-            img.className = 'row-img';
-            img.src = combo.img;
-            img.alt = combo.name;
-            row.appendChild(img);
-
-            var info = ent.createElement('div');
-            info.className = 'row-info';
-            var name = ent.createElement('div');
-            name.className = 'row-name';
-            name.textContent = combo.name;
-            info.appendChild(name);
-            var desc = ent.createElement('div');
-            desc.className = 'row-desc';
-            desc.textContent = COMBO_DESCRIPTIONS[i] || '';
-            info.appendChild(desc);
-            row.appendChild(info);
-
-            var value = ent.createElement('div');
-            value.className = 'row-value';
-            value.textContent = combo.value;
-            row.appendChild(value);
-
-            listEl.appendChild(row);
-        }
-    }
-
-    function openCombosModal() {
-        var modal = ent.getElementById('combosModal');
-        if (modal) {
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeCombosModal() {
-        var modal = document.getElementById('combosModal');
-        if (modal) {
-            modal.classList.remove('open');
-            document.body.style.overflow = '';
         }
     }
 
@@ -291,9 +230,6 @@
         return a.level === b.level && a.level < MAX_LEVEL;
     }
 
-    // ============================================================
-    // НОВАЯ КАРТА
-    // ============================================================
     function spawnRandomCard() {
         var empties = [];
         for (var r = 0; r < SIZE; r++) {
@@ -322,137 +258,6 @@
     }
 
     // ============================================================
-    // UNDO (ОТМЕНА ХОДА)
-    // ============================================================
-    function saveState() {
-        var gridCopy = [];
-        for (var r = 0; r < SIZE; r++) {
-            var row = [];
-            for (var c = 0; c < SIZE; c++) {
-                var card = grid[r][c];
-                row.push(card ? { id: card.id, level: card.level } : null);
-            }
-            gridCopy.push(row);
-        }
-        previousState = { grid: gridCopy, score: score, idCounter: idCounter };
-        if (undoBtn) undoBtn.disabled = false;
-    }
-
-       function undoMove() {
-        if (!previousState || over) return;
-
-        // 1. Очищаем слой плиток полностью
-        tilesLayer.innerHTML = '';
-        tiles = {};
-
-        // 2. Восстанавливаем логическое состояние
-        grid = emptyGrid();
-        score = previousState.score;
-        idCounter = previousState.idCounter;
-        won = previousState.won || false;
-
-        // 3. Пересоздаём плитки из снимка
-        for (var r = 0; r < SIZE; r++) {
-            for (var c = 0; c < SIZE; c++) {
-                var savedCard = previousState.grid[r][c];
-                if (savedCard) {
-                    grid[r][c] = { id: savedCard.id, level: savedCard.level };
-
-                    var node = createTileNode(savedCard.id, savedCard.level);
-                    updateTileContent(node, savedCard.level);
-                    tilesLayer.appendChild(node);
-                    tiles[savedCard.id] = node;
-
-                    applyPosition(node, r, c, true);
-                }
-            }
-        }
-
-        // 4. Обновляем счёт
-        scoreEl.textContent = score;
-        if (bestEl) bestEl.textContent = best;
-
-        // 5. Отключаем кнопку — откат только на 1 шаг
-        previousState = null;
-        if (undoBtn) undoBtn.disabled = true;
-    }
-
-    // ============================================================
-    // ЧИТ-КОД
-    // ============================================================
-    var cheatInput = '';
-    var CHEAT_CODE = 'poker';
-
-    function handleCheatInput(key) {
-        cheatInput += key.toLowerCase();
-        if (cheatInput.length > CHEAT_CODE.length) {
-            cheatInput = cheatInput.slice(-CHEAT_CODE.length);
-        }
-        if (cheatInput === CHEAT_CODE) {
-            cheatInput = '';
-            activateCheat();
-        }
-    }
-
-    function activateCheat() {
-        if (over) return;
-        saveState(); // можно отменить чит
-
-        // Ищем свободное место (или заменяем самое слабое)
-        var emptySpots = [];
-        var lowestLevel = 999;
-        var lowestR = -1, lowestC = -1;
-
-        for (var r = 0; r < SIZE; r++) {
-            for (var c = 0; c < SIZE; c++) {
-                if (!grid[r][c]) {
-                    emptySpots.push({ r: r, c: c });
-                } else if (grid[r][c].level < lowestLevel) {
-                    lowestLevel = grid[r][c].level;
-                    lowestR = r;
-                    lowestC = c;
-                }
-            }
-        }
-
-        var target;
-        if (emptySpots.length > 0) {
-            target = emptySpots[randInt(emptySpots.length)];
-        } else {
-            target = { r: lowestR, c: lowestC };
-            // Удаляем старую плитку
-            var oldCard = grid[target.r][target.c];
-            if (oldCard && tiles[oldCard.id]) {
-                tiles[oldCard.id].parentNode.removeChild(tiles[oldCard.id]);
-                delete tiles[oldCard.id];
-            }
-        }
-
-        // Создаём Роял-флеш (уровень 9)
-        var cheatCard = { id: 'cheat_' + Date.now(), level: 9 };
-        grid[target.r][target.c] = cheatCard;
-
-        var node = createTileNode(cheatCard.id, 9);
-        updateTileContent(node, 9);
-        tilesLayer.appendChild(node);
-        tiles[cheatCard.id] = node;
-
-        applyPosition(node, target.r, target.c, true);
-        node.classList.add('tile-new');
-
-        // Празднование и обновление счёта (дадим очки за чит)
-        score += 1024;
-        if (score > best) {
-            best = score;
-            localStorage.setItem('poker2048-best', String(best));
-        }
-        scoreEl.textContent = score;
-        bestEl.textContent = best;
-
-        showCelebration();
-    }
-
-    // ============================================================
     // ХОД
     // ============================================================
     function move(dir) {
@@ -460,7 +265,7 @@
 
         var before = serializeGrid();
 
-        // === СОХРАНЯЕМ СОСТОЯНИЕ ДО ЛЮБЫХ ИЗМЕНЕНИЙ ===
+        // 1. СНИМОК ДО ХОДА
         var gridSnapshot = [];
         for (var sr = 0; sr < SIZE; sr++) {
             var rowSnap = [];
@@ -470,16 +275,11 @@
             }
             gridSnapshot.push(rowSnap);
         }
-        previousState = {
-            grid: gridSnapshot,
-            score: score,
-            idCounter: idCounter,
-            won: won
-        };
-        // ================================================
+        previousState = { grid: gridSnapshot, score: score, idCounter: idCounter, won: won };
 
         var mergedTiles = [];
 
+        // 2. ЛОГИКА СДВИГА
         for (var li = 0; li < SIZE; li++) {
             var coords = [];
             for (var j = 0; j < SIZE; j++) {
@@ -523,11 +323,8 @@
                     grid[pos.r][pos.c] = out[j2];
                     if (mergedInfo[j2]) {
                         mergedTiles.push({
-                            id: out[j2].id,
-                            absorbedId: mergedInfo[j2].source,
-                            newLevel: mergedInfo[j2].newLevel,
-                            r: pos.r,
-                            c: pos.c
+                            id: out[j2].id, absorbedId: mergedInfo[j2].source,
+                            newLevel: mergedInfo[j2].newLevel, r: pos.r, c: pos.c
                         });
                     }
                 } else {
@@ -536,17 +333,15 @@
             }
         }
 
-        // Если ничего не сдвинулось — отменяем сохранение (чтобы не портить previousState)
         if (serializeGrid() === before) {
             previousState = null;
             if (undoBtn) undoBtn.disabled = true;
             return;
         }
 
-        // Активируем кнопку Undo
         if (undoBtn) undoBtn.disabled = false;
 
-        // Движение
+        // 3. АНИМАЦИЯ
         for (var r2 = 0; r2 < SIZE; r2++) {
             for (var c2 = 0; c2 < SIZE; c2++) {
                 var card2 = grid[r2][c2];
@@ -557,27 +352,18 @@
             }
         }
 
-        // Слияния
         for (var mi = 0; mi < mergedTiles.length; mi++) {
             (function (info) {
                 var absorbedNode = tiles[info.absorbedId];
-                if (absorbedNode) {
-                    applyPosition(absorbedNode, info.r, info.c, false);
-                }
-
+                if (absorbedNode) applyPosition(absorbedNode, info.r, info.c, false);
                 setTimeout(function () {
-                    if (absorbedNode && absorbedNode.parentNode) {
-                        absorbedNode.parentNode.removeChild(absorbedNode);
-                    }
+                    if (absorbedNode && absorbedNode.parentNode) absorbedNode.parentNode.removeChild(absorbedNode);
                     delete tiles[info.absorbedId];
-
                     var winnerNode = tiles[info.id];
                     if (winnerNode) {
                         updateTileContent(winnerNode, info.newLevel);
                         winnerNode.classList.add('tile-merged');
-                        setTimeout(function () {
-                            winnerNode.classList.remove('tile-merged');
-                        }, 320);
+                        setTimeout(function () { winnerNode.classList.remove('tile-merged'); }, 320);
                     }
                 }, 160);
             })(mergedTiles[mi]);
@@ -641,33 +427,60 @@
         el.className = 'celebration';
         el.innerHTML = '👑 РОЯЛ-ФЛЕШ! 👑<br><span style="font-size:16px;opacity:.8;">Соберите ещё!</span>';
         boardEl.appendChild(el);
-        setTimeout(function () {
-            if (el.parentNode) el.parentNode.removeChild(el);
-        }, 2500);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2500);
     }
 
     function showGameOver(text) {
         var el = document.createElement('div');
         el.className = 'game-over';
-
         var t = document.createElement('div');
         t.textContent = text;
         el.appendChild(t);
-
         var s = document.createElement('div');
-        s.style.fontSize = '14px';
-        s.style.opacity = '0.8';
+        s.style.fontSize = '14px'; s.style.opacity = '0.8';
         s.textContent = 'Счёт: ' + score;
         el.appendChild(s);
-
         var btn = document.createElement('button');
         btn.textContent = 'Играть заново';
         btn.addEventListener('click', init);
         el.appendChild(btn);
-
         boardEl.appendChild(el);
     }
 
+    // ============================================================
+    // UNDO
+    // ============================================================
+    function undoMove() {
+        if (!previousState || over) return;
+        tilesLayer.innerHTML = '';
+        tiles = {};
+        grid = emptyGrid();
+        score = previousState.score;
+        idCounter = previousState.idCounter;
+        won = previousState.won || false;
+
+        for (var r = 0; r < SIZE; r++) {
+            for (var c = 0; c < SIZE; c++) {
+                var savedCard = previousState.grid[r][c];
+                if (savedCard) {
+                    grid[r][c] = { id: savedCard.id, level: savedCard.level };
+                    var node = createTileNode(savedCard.id, savedCard.level);
+                    updateTileContent(node, savedCard.level);
+                    tilesLayer.appendChild(node);
+                    tiles[savedCard.id] = node;
+                    applyPosition(node, r, c, true);
+                }
+            }
+        }
+        scoreEl.textContent = score;
+        if (bestEl) bestEl.textContent = best;
+        previousState = null;
+        if (undoBtn) undoBtn.disabled = true;
+    }
+
+    // ============================================================
+    // INIT (НОВАЯ ИГРА)
+    // ============================================================
     function init() {
         var go = boardEl.querySelector('.game-over');
         if (go) go.remove();
@@ -706,20 +519,11 @@
     document.addEventListener('keydown', function (e) {
         var dir = keyMap[e.key];
         if (dir) { e.preventDefault(); move(dir); }
-        
         if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') init();
-        
-        // Undo по клавише Z
         if (e.key === 'z' || e.key === 'Z' || e.key === 'я' || e.key === 'Я') undoMove();
-
-        // Чит-код
-        if (/^[a-zA-Zа-яА-Я]$/.test(e.key)) {
-            handleCheatInput(e.key);
-        }
     });
 
     var touchStart = null;
-
     boardEl.addEventListener('touchstart', function (e) {
         if (e.touches.length > 1) return;
         var t = e.touches[0];
@@ -736,117 +540,113 @@
         var dx = t.clientX - touchStart.x;
         var dy = t.clientY - touchStart.y;
         touchStart = null;
-
         if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
         if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'r' : 'l');
         else move(dy > 0 ? 'd' : 'u');
     }, { passive: true });
 
-    boardEl.addEventListener('touchcancel', function () {
-        touchStart = null;
-    });
-    // ============================================================
-    // МУЗЫКА
-    // ============================================================
-    var bgMusic = document.getElementById('bgMusic');
-    var musicBtn = document.getElementById('musicBtn');
+    boardEl.addEventListener('touchcancel', function () { touchStart = null; });
+
+    // Кнопки
+    var newGameBtn = document.getElementById('newGame');
+    if (newGameBtn) newGameBtn.addEventListener('click', init);
+    if (undoBtn) undoBtn.addEventListener('click', undoMove);
+
+    // Музыка
     var musicOn = false;
     var musicStarted = false;
-
-    // Устанавливаем громкость (30% — чтобы не перебивала мысли)
-    if (bgMusic) {
-        bgMusic.volume = 0.3;
-    }
+    if (bgMusic) bgMusic.volume = 0.3;
 
     function startMusic() {
         if (!bgMusic || musicStarted) return;
         bgMusic.play().then(function () {
-            musicStarted = true;
-            musicOn = true;
+            musicStarted = true; musicOn = true;
             if (musicBtn) musicBtn.textContent = '🔊';
-        }).catch(function (err) {
-            console.log('Автозапуск заблокирован браузером:', err);
-        });
-    }
-
-    function toggleMusic() {
-        if (!bgMusic) return;
-        if (musicOn) {
-            bgMusic.pause();
-            musicOn = false;
-            if (musicBtn) musicBtn.textContent = '🔇';
-        } else {
-            bgMusic.play().then(function () {
-                musicOn = true;
-                musicStarted = true;
-                if (musicBtn) musicBtn.textContent = '🔊';
-            });
-        }
+        }).catch(function () {});
     }
 
     if (musicBtn) {
-        musicBtn.addEventListener('click', toggleMusic);
+        musicBtn.addEventListener('click', function() {
+            if (!bgMusic) return;
+            if (musicOn) {
+                bgMusic.pause(); musicOn = false; musicBtn.textContent = '🔇';
+            } else {
+                bgMusic.play().then(function() { musicOn = true; musicStarted = true; musicBtn.textContent = '🔊'; });
+            }
+        });
     }
-       // ============================================================
-    // ЗАПУСК ИГРЫ И МУЗЫКИ
+
+    // Модалка комбинаций
+    var combosBtn = document.getElementById('combosBtn');
+    var combosClose = document.getElementById('combosClose');
+    var combosBackdrop = document.getElementById('combosBackdrop');
+    var combosModal = document.getElementById('combosModal');
+    var combosList = document.getElementById('combosList');
+
+    if (combosList) {
+        combosList.innerHTML = '';
+        for (var i = 0; i < BASE_COMBOS.length; i++) {
+            var combo = BASE_COMBOS[i];
+            var row = document.createElement('div');
+            row.className = 'combo-row';
+            row.setAttribute('data-level', String(i));
+            var img = document.createElement('img');
+            img.className = 'row-img'; img.src = combo.img; img.alt = combo.name;
+            row.appendChild(img);
+            var info = document.createElement('div');
+            info.className = 'row-info';
+            var name = document.createElement('div');
+            name.className = 'row-name'; name.textContent = combo.name;
+            info.appendChild(name);
+            var desc = document.createElement('div');
+            desc.className = 'row-desc'; desc.textContent = COMBO_DESCRIPTIONS[i] || '';
+            info.appendChild(desc);
+            row.appendChild(info);
+            var val = document.createElement('div');
+            val.className = 'row-value'; val.textContent = combo.value;
+            row.appendChild(val);
+            combosList.appendChild(row);
+        }
+    }
+
+    if (combosBtn && combosModal) {
+        combosBtn.addEventListener('click', function() {
+            combosModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+        if (combosClose) combosClose.addEventListener('click', function() {
+            combosModal.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+        if (combosBackdrop) combosBackdrop.addEventListener('click', function() {
+            combosModal.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+    }
+
+    // Resize
+    var resizeTimeout = null;
+    window.addEventListener('resize', function () {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(recalcSizes, 100);
+    });
+
     // ============================================================
-    
-    // 1. Сначала строим пустую сетку и запускаем игру
-    buildCombosList();
+    // ЗАПУСК
+    // ============================================================
     buildGridLayer();
     recalcSizes();
-    init(); // Карты появляются сразу
+    init(); // Игра появляется сразу!
 
-    // 2. Настраиваем музыку
-    var bgMusic = document.getElementById('bgMusic');
-    var musicBtn = document.getElementById('musicBtn');
-    var musicOn = false;
-    var musicStarted = false;
-
-    if (bgMusic) {
-        bgMusic.volume = 0.3;
-    }
-
-    function startMusic() {
-        if (!bgMusic || musicStarted) return;
-        bgMusic.play().then(function () {
-            musicStarted = true;
-            musicOn = true;
-            if (musicBtn) musicBtn.textContent = '🔊';
-        }).catch(function (err) {
-            console.log('Автозапуск заблокирован:', err);
-        });
-    }
-
-    function toggleMusic() {
-        if (!bgMusic) return;
-        if (musicOn) {
-            bgMusic.pause();
-            musicOn = false;
-            if (musicBtn) musicBtn.textContent = '🔇';
-        } else {
-            bgMusic.play().then(function () {
-                musicOn = true;
-                musicStarted = true;
-                if (musicBtn) musicBtn.textContent = '🔊';
-            });
-        }
-    }
-
-    if (musicBtn) {
-        musicBtn.addEventListener('click', toggleMusic);
-    }
-
-    // 3. Включаем музыку при первом действии
+    // Музыка включается после первого действия
     function tryAutoStart() {
         if (!musicStarted) startMusic();
         document.removeEventListener('keydown', tryAutoStart);
         document.removeEventListener('touchstart', tryAutoStart);
         document.removeEventListener('click', tryAutoStart);
     }
-
     document.addEventListener('keydown', tryAutoStart);
     document.addEventListener('touchstart', tryAutoStart);
     document.addEventListener('click', tryAutoStart);
 
-})(); // Конец скрипта
+})();

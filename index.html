@@ -27,6 +27,7 @@
             </div>
             <button id="newGame">Новая</button>
             <button id="undoBtn" class="btn-info" title="Отменить ход" disabled>↩️</button>
+            <button id="musicBtn" class="btn-info" title="Музыка">🔇</button>
             <button id="combosBtn" class="btn-info" title="Комбинации">📖</button>
         </div>
 
@@ -54,7 +55,9 @@
             </div>
         </div>
     </div>
-
+<audio id="bgMusic" loop preload="none">
+    <source src="audio/bg-music.mp3" type="audio/mpeg">
+</audio>
     <script src="script.js"></script>
 </body>
 </html>

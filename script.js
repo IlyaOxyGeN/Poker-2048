@@ -787,8 +787,17 @@
     if (musicBtn) {
         musicBtn.addEventListener('click', toggleMusic);
     }
+    // ============================================================
+    // СТАРТ ИГРЫ
+    // ============================================================
+    
+    // 1. Сначала строим пустую сетку и запускаем игру (карты появятся сразу)
+    buildCombosList();
+    buildGridLayer();
+    recalcSizes();
+    init();
 
-    // Автозапуск при первом действии игрока (клик, свайп, кнопка)
+    // 2. Навешиваем "пробуждение" музыки на первый клик/свайп
     function tryAutoStart() {
         if (!musicStarted) startMusic();
         document.removeEventListener('keydown', tryAutoStart);
@@ -799,27 +808,5 @@
     document.addEventListener('keydown', tryAutoStart);
     document.addEventListener('touchstart', tryAutoStart);
     document.addEventListener('click', tryAutoStart);
-    // ============================================================
-    document.getElementById('newGame').addEventListener('click', init);
-    
-    if (undoBtn) undoBtn.addEventListener('click', undoMove);
-    
-    var combosBtn = document.getElementById('combosBtn');
-    var combosClose = document.getElementById('combosClose');
-    var combosBackdrop = document.getElementById('combosBackdrop');
 
-    if (combosBtn) combosBtn.addEventListener('click', openCombosModal);
-    if (combosClose) combosClose.addEventListener('click', closeCombosModal);
-    if (combosBackdrop) combosBackdrop.addEventListener('click', closeCombosModal);
-
-    var resizeTimeout = null;
-    window.addEventListener('resize', function () {
-        if (resizeTimeout) clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(recalcSizes, 100);
-    });
-
-    buildCombosList();
-    buildGridLayer();
-    recalcSizes();
-    init();
 })();

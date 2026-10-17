@@ -625,3 +625,57 @@ h1 {
     border-radius: 4px;
 }
 .modal-content::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, .8); }
+/* ============================================
+   БЕСКОНЕЧНЫЕ УРОВНИ (10+)
+   Переиспользуют 1024.png, но с разным свечением
+   ============================================ */
+.tile[data-level="10"] .tile-art {
+    box-shadow: 0 0 45px 10px rgba(255, 100, 100, 0.9);
+}
+.tile[data-level="11"] .tile-art {
+    box-shadow: 0 0 55px 14px rgba(100, 200, 255, 0.9);
+}
+.tile[data-level="12"] .tile-art {
+    box-shadow: 0 0 65px 18px rgba(255, 255, 100, 0.9);
+    animation: gold-pulse 1.5s ease-in-out infinite;
+}
+.tile[data-level="13"] .tile-art,
+.tile[data-level="14"] .tile-art,
+.tile[data-level="15"] .tile-art,
+.tile[data-level="16"] .tile-art,
+.tile[data-level="17"] .tile-art,
+.tile[data-level="18"] .tile-art,
+.tile[data-level="19"] .tile-art,
+.tile[data-level="20"] .tile-art {
+    background: linear-gradient(135deg, #ff5f6d, #ffc371, #ffe98a, #a8e063, #56ab2f, #3ec6e0, #8b2ea1, #ff5f6d);
+    background-size: 400% 400%;
+    animation: royal-flow 3s ease infinite;
+    box-shadow: 0 0 70px 20px rgba(255, 215, 0, 0.9);
+}
+
+/* ============================================
+   ПРАЗДНОВАНИЕ (первый Роял-флеш)
+   ============================================ */
+.celebration {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff5f6d, #ffc371, #ffe98a, #a8e063);
+    background-size: 300% 300%;
+    animation: royal-flow 3s ease infinite, celebration-pop 0.5s ease-out;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    box-shadow: 0 0 40px 12px rgba(255, 215, 0, 0.9);
+    z-index: 50;
+    text-align: center;
+    pointer-events: none;
+}
+@keyframes celebration-pop {
+    0% { opacity: 0; transform: translateX(-50%) scale(0.3); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}

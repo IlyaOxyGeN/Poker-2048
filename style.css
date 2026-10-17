@@ -678,4 +678,10 @@ h1 {
 @keyframes celebration-pop {
     0% { opacity: 0; transform: translateX(-50%) scale(0.3); }
     100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}/* Неактивная кнопка Undo */
+.btn-info:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 0 #6b4e00;
 }

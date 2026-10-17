@@ -606,9 +606,9 @@
             return; 
         }
 
-        // 2. Рестарт (только Shift+R)
+           // 2. Рестарт (только Shift+R)
         if (e.key === 'R' || e.key === 'К') {
-            init();
+            askNewGame(); // Теперь тоже спрашиваем!
             return;
         }
 
@@ -731,7 +731,28 @@
         if (resizeTimeout) clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(recalcSizes, 100);
     });
+    // Обработчики окна подтверждения
+    var confirmYes = document.getElementById('confirmYes');
+    var confirmNo = document.getElementById('confirmNo');
+    var confirmBackdrop = document.getElementById('confirmBackdrop');
 
+    if (confirmYes) {
+        confirmYes.addEventListener('click', function() {
+            confirmModal.classList.remove('open');
+            document.body.style.overflow = '';
+            init(); // Запускаем новую игру
+        });
+    }
+
+    function closeConfirm() {
+        if (confirmModal) {
+            confirmModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (confirmNo) confirmNo.addEventListener('click', closeConfirm);
+    if (confirmBackdrop) confirmBackdrop.addEventListener('click', closeConfirm);
     // ============================================================
     // ЗАПУСК
     // ============================================================

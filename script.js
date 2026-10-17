@@ -1,12 +1,12 @@
 (function () {
     'use strict';
 
-    // ============================================================
-    // КОНСТАНТЫ
-    // ============================================================
     var SIZE = 4;
 
-       var COMBOS = [
+    // ============================================================
+    // КОМБИНАЦИИ
+    // ============================================================
+    var BASE_COMBOS = [
         { name: 'Старшая карта', value: 2,    short: 'Старшая',    img: 'img/2.png' },
         { name: 'Пара',          value: 4,    short: 'Пара',       img: 'img/4.png' },
         { name: 'Две пары',      value: 8,    short: 'Две пары',   img: 'img/8.png' },
@@ -18,7 +18,41 @@
         { name: 'Стрит-флеш',    value: 512,  short: 'Стрит-флеш', img: 'img/512.png' },
         { name: 'Роял-флеш',     value: 1024, short: 'Роял-флеш',  img: 'img/1024.png' }
     ];
-    var MAX_LEVEL = COMBOS.length - 1;
+
+    // Мягкий лимит (дальше бесконечность)
+    var MAX_LEVEL = 20;
+
+    // Функция получения комбинации по уровню
+    function getCombo(level) {
+        if (level < BASE_COMBOS.length) {
+            return BASE_COMBOS[level];
+        }
+        // Уровни выше 9 — "Роял-флеш" с растущим значением
+        var baseValue = 1024 * Math.pow(2, level - 9);
+        var suffixes = ['', '🔥', '💎', '⚡', '👑', '🌟', '💫', '🏆'];
+        var suffix = suffixes[(level - 9) % suffixes.length];
+
+        return {
+            name: 'Роял-флеш ' + suffix,
+            value: baseValue,
+            short: 'Роял-флеш ' + suffix,
+            img: 'img/1024.png'   // та же картинка
+        };
+    }
+
+    // Описания для модалки
+    var COMBO_DESCRIPTIONS = [
+        'Одна любая карта. Основа всего — собирайте пары.',
+        'Две карты одного ранга. Сливаются в «Две пары».',
+        'Две пары разных рангов. Сливаются в «Сет».',
+        'Три карты одного ранга. Сливаются в «Стрит».',
+        'Пять карт подряд по рангу. Сливаются в «Флеш».',
+        'Пять карт одной масти. Сливаются в «Фулл-хаус».',
+        'Тройка + пара. Сливаются в «Каре».',
+        'Четыре карты одного ранга. Сливаются в «Стрит-флеш».',
+        'Пять карт подряд одной масти. Сливаются в «Роял-флеш».',
+        'Высшая комбинация: 10 J Q K A одной масти. 🏆 Победа!'
+    ];
 
     // ============================================================
     // DOM
@@ -36,24 +70,22 @@
     var score = 0;
     var best = parseInt(localStorage.getItem('poker2048-best') || '0', 10) || 0;
     var over = false;
-    var won = false;
+    var won = false;        // победа (первый Роял-флеш)
     var idCounter = 0;
     var tiles = {};
 
-    // Размеры — вычисляются в recalcSizes()
     var cellW = 88;
     var cellH = 104;
     var gap = 8;
     var pad = 10;
-    var frame = 8;   // толщина рамки .board (должна совпадать с CSS)
+    var frame = 8;
 
     bestEl.textContent = best;
 
     // ============================================================
     // РАЗМЕРЫ
     // ============================================================
-       function recalcSizes() {
-        // 1. Доступная ширина
+    function recalcSizes() {
         var maxBoardWidth;
         if (window.innerWidth < 520) {
             maxBoardWidth = window.innerWidth - 24;
@@ -61,12 +93,9 @@
             maxBoardWidth = Math.min(window.innerWidth - 32, 460);
         }
 
-        // 2. Внутренние отступы
         var padSize = maxBoardWidth < 380 ? 6 : 10;
         var gapSize = maxBoardWidth < 380 ? 6 : 8;
 
-        // 3. Размер клетки
-        // boardInner = 4*cellW + 3*gap + 2*pad  (без рамки)
         var availableW = maxBoardWidth - 2 * frame - 2 * padSize - 3 * gapSize;
         var cw = Math.floor(availableW / 4);
         var ch = Math.floor(cw * 1.18);
@@ -76,14 +105,12 @@
         gap   = gapSize;
         pad   = padSize;
 
-        // 4. Размеры board
         var innerW = 4 * cw + 3 * gapSize + 2 * padSize;
         var innerH = 4 * ch + 3 * gapSize + 2 * padSize;
 
         boardEl.style.width  = innerW + 'px';
         boardEl.style.height = innerH + 'px';
 
-        // 5. Слои — задаём И размер, И позицию
         var gridW = 4 * cw + 3 * gapSize;
         var gridH = 4 * ch + 3 * gapSize;
 
@@ -100,7 +127,6 @@
         tilesLayer.style.width  = gridW + 'px';
         tilesLayer.style.height = gridH + 'px';
 
-        // 6. Пересчитываем позиции плиток
         for (var r = 0; r < SIZE; r++) {
             for (var c = 0; c < SIZE; c++) {
                 var card = grid && grid[r][c];
@@ -109,14 +135,6 @@
                 }
             }
         }
-
-        // 7. Диагностика (убери потом)
-        console.log('SIZES',
-            '| cw:', cw, 'ch:', ch,
-            '| gap:', gapSize, 'pad:', padSize,
-            '| board:', innerW + '×' + innerH,
-            '| grid:', gridW + '×' + gridH
-        );
     }
 
     function applyPosition(node, r, c, instant) {
@@ -137,43 +155,29 @@
             node.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
         }
     }
-    // ============================================================
-    // СПРАВОЧНИК КОМБИНАЦИЙ
-    // ============================================================
-    var COMBO_DESCRIPTIONS = [
-        'Одна любая карта. Основа всего — собирайте пары.',
-        'Две карты одного ранга. Сливаются в «Две пары».',
-        'Две пары разных рангов. Сливаются в «Сет».',
-        'Три карты одного ранга. Сливаются в «Стрит».',
-        'Пять карт подряд по рангу. Сливаются в «Флеш».',
-        'Пять карт одной масти. Сливаются в «Фулл-хаус».',
-        'Тройка + пара. Сливаются в «Каре».',
-        'Четыре карты одного ранга. Сливаются в «Стрит-флеш».',
-        'Пять карт подряд одной масти. Сливаются в «Роял-флеш».',
-        'Высшая комбинация: 10 J Q K A одной масти. 🏆 Победа!'
-    ];
 
+    // ============================================================
+    // СПРАВОЧНИК КОМБИНАЦИЙ (МОДАЛКА)
+    // ============================================================
     function buildCombosList() {
         var listEl = document.getElementById('combosList');
         if (!listEl) return;
 
         listEl.innerHTML = '';
 
-        for (var i = 0; i < COMBOS.length; i++) {
-            var combo = COMBOS[i];
+        for (var i = 0; i < BASE_COMBOS.length; i++) {
+            var combo = BASE_COMBOS[i];
 
             var row = document.createElement('div');
             row.className = 'combo-row';
             row.setAttribute('data-level', String(i));
 
-            // Картинка
             var img = document.createElement('img');
             img.className = 'row-img';
             img.src = combo.img || '';
             img.alt = combo.name;
             row.appendChild(img);
 
-            // Информация
             var info = document.createElement('div');
             info.className = 'row-info';
 
@@ -189,7 +193,6 @@
 
             row.appendChild(info);
 
-            // Значение
             var value = document.createElement('div');
             value.className = 'row-value';
             value.textContent = combo.value;
@@ -199,7 +202,6 @@
         }
     }
 
-    // ---- Управление модальным окном ----
     function openCombosModal() {
         var modal = document.getElementById('combosModal');
         if (!modal) return;
@@ -214,30 +216,20 @@
         document.body.style.overflow = '';
     }
 
-    // ---- Слушатели ----
     var combosBtn = document.getElementById('combosBtn');
     var combosClose = document.getElementById('combosClose');
     var combosBackdrop = document.getElementById('combosBackdrop');
 
-    if (combosBtn) {
-        combosBtn.addEventListener('click', openCombosModal);
-    }
-    if (combosClose) {
-        combosClose.addEventListener('click', closeCombosModal);
-    }
-    if (combosBackdrop) {
-        combosBackdrop.addEventListener('click', closeCombosModal);
-    }
+    if (combosBtn) combosBtn.addEventListener('click', openCombosModal);
+    if (combosClose) combosClose.addEventListener('click', closeCombosModal);
+    if (combosBackdrop) combosBackdrop.addEventListener('click', closeCombosModal);
 
-    // Закрытие по Esc
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeCombosModal();
     });
 
-    // Собираем список при старте
-    buildCombosList();
     // ============================================================
-    // СЕТКА (GRID LAYER)
+    // СЕТКА
     // ============================================================
     function buildGridLayer() {
         gridLayer.innerHTML = '';
@@ -249,9 +241,9 @@
     }
 
     // ============================================================
-    // ПЛИТКИ (TILE DOM)
+    // ПЛИТКИ
     // ============================================================
-       function createTileNode(id, level) {
+    function createTileNode(id, level) {
         var node = document.createElement('div');
         node.className = 'tile';
         node.setAttribute('data-id', id);
@@ -260,7 +252,6 @@
         var art = document.createElement('div');
         art.className = 'tile-art';
 
-        // Картинка-арт комбинации
         var img = document.createElement('img');
         img.className = 'tile-img';
         img.alt = '';
@@ -273,13 +264,11 @@
         val.className = 'tile-value';
         node.appendChild(val);
 
-        // Эмодзи (для fallback, если картинки нет)
         var emoji = document.createElement('div');
         emoji.className = 'tile-emoji';
         emoji.style.display = 'none';
         art.appendChild(emoji);
 
-        // Текстовая метка (для fallback, если картинки нет)
         var label = document.createElement('div');
         label.className = 'tile-label';
         art.appendChild(label);
@@ -287,39 +276,35 @@
         return node;
     }
 
-       function updateTileContent(node, level) {
+    function updateTileContent(node, level) {
         node.setAttribute('data-level', level);
 
         var img   = node.querySelector('.tile-img');
         var emoji = node.querySelector('.tile-emoji');
         var label = node.querySelector('.tile-label');
         var value = node.querySelector('.tile-value');
-        var combo = COMBOS[level];
+        var combo = getCombo(level);
 
         value.textContent = combo.value;
         label.textContent = combo.short;
 
-        // Если у комбинации есть картинка — показываем её
         if (combo.img) {
             img.src = combo.img;
             img.style.display = '';
             img.onerror = function () {
-                // Если картинка не загрузилась — fallback на текст
                 img.style.display = 'none';
                 label.style.display = '';
-                if (level === MAX_LEVEL) {
+                if (level >= 9) {
                     emoji.style.display = '';
                     emoji.textContent = '\uD83D\uDC51';
                 }
             };
-            // Скрываем текстовую метку — картинка сама всё скажет
             label.style.display = 'none';
             emoji.style.display = 'none';
         } else {
-            // Нет картинки — показываем текст
             img.style.display = 'none';
             label.style.display = '';
-            if (level === MAX_LEVEL) {
+            if (level >= 9) {
                 emoji.style.display = '';
                 emoji.textContent = '\uD83D\uDC51';
             } else {
@@ -327,6 +312,7 @@
             }
         }
     }
+
     // ============================================================
     // ЛОГИКА
     // ============================================================
@@ -347,9 +333,6 @@
         return a.level === b.level && a.level < MAX_LEVEL;
     }
 
-    // ============================================================
-    // НОВАЯ КАРТА
-    // ============================================================
     function spawnRandomCard() {
         var empties = [];
         for (var r = 0; r < SIZE; r++) {
@@ -380,11 +363,8 @@
         return card;
     }
 
-    // ============================================================
-    // ХОД
-    // ============================================================
     function move(dir) {
-        if (over || won) return;
+        if (over) return;
 
         var before = serializeGrid();
         var mergedTiles = [];
@@ -417,7 +397,7 @@
                     var newCard = { id: a.id, level: a.level + 1 };
                     out.push(newCard);
                     mergedInfo.push({ source: b.id, newLevel: newCard.level });
-                    score += COMBOS[newCard.level].value;
+                    score += getCombo(newCard.level).value;
                     idx += 2;
                 } else {
                     out.push(items[idx]);
@@ -447,7 +427,6 @@
 
         if (serializeGrid() === before) return;
 
-        // Движение всех плиток
         for (var r2 = 0; r2 < SIZE; r2++) {
             for (var c2 = 0; c2 < SIZE; c2++) {
                 var card2 = grid[r2][c2];
@@ -458,7 +437,6 @@
             }
         }
 
-        // Слияния
         for (var mi = 0; mi < mergedTiles.length; mi++) {
             (function (info) {
                 var absorbedNode = tiles[info.absorbedId];
@@ -520,19 +498,34 @@
     }
 
     function checkEnd() {
-        for (var r = 0; r < SIZE; r++) {
-            for (var c = 0; c < SIZE; c++) {
-                if (grid[r][c] && grid[r][c].level === MAX_LEVEL) {
-                    won = true;
-                    showGameOver('\uD83D\uDC51 РОЯЛ-ФЛЕШ! \uD83D\uDC51');
-                    return;
+        // Проверка первого Роял-флеша (победа, но игра продолжается)
+        if (!won) {
+            for (var r = 0; r < SIZE; r++) {
+                for (var c = 0; c < SIZE; c++) {
+                    if (grid[r][c] && grid[r][c].level >= 9) {
+                        won = true;
+                        showCelebration();
+                        return;
+                    }
                 }
             }
         }
+        // Проверка проигрыша
         if (!canMove()) {
             over = true;
             showGameOver('ИГРА ОКОНЧЕНА');
         }
+    }
+
+    function showCelebration() {
+        var el = document.createElement('div');
+        el.className = 'celebration';
+        el.innerHTML = '👑 РОЯЛ-ФЛЕШ! 👑<br><span style="font-size:16px;opacity:.8;">Соберите ещё!</span>';
+        boardEl.appendChild(el);
+
+        setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        }, 2500);
     }
 
     function showGameOver(text) {
@@ -557,12 +550,11 @@
         boardEl.appendChild(el);
     }
 
-    // ============================================================
-    // INIT
-    // ============================================================
     function init() {
         var go = boardEl.querySelector('.game-over');
         if (go) go.remove();
+        var cel = boardEl.querySelector('.celebration');
+        if (cel) cel.remove();
 
         tilesLayer.innerHTML = '';
         tiles = {};
@@ -596,7 +588,6 @@
         if (e.key === 'r' || e.key === 'R' || e.key === '\u043a' || e.key === '\u041a') init();
     });
 
-    // ---- Свайпы ----
     var touchStart = null;
 
     boardEl.addEventListener('touchstart', function (e) {
@@ -633,9 +624,7 @@
         resizeTimeout = setTimeout(recalcSizes, 100);
     });
 
-    // ============================================================
-    // СТАРТ
-    // ============================================================
+    buildCombosList();
     buildGridLayer();
     recalcSizes();
     init();

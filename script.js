@@ -787,17 +787,57 @@
     if (musicBtn) {
         musicBtn.addEventListener('click', toggleMusic);
     }
-    // ============================================================
-    // СТАРТ ИГРЫ
+       // ============================================================
+    // ЗАПУСК ИГРЫ И МУЗЫКИ
     // ============================================================
     
-    // 1. Сначала строим пустую сетку и запускаем игру (карты появятся сразу)
+    // 1. Сначала строим пустую сетку и запускаем игру
     buildCombosList();
     buildGridLayer();
     recalcSizes();
-    init();
+    init(); // Карты появляются сразу
 
-    // 2. Навешиваем "пробуждение" музыки на первый клик/свайп
+    // 2. Настраиваем музыку
+    var bgMusic = document.getElementById('bgMusic');
+    var musicBtn = document.getElementById('musicBtn');
+    var musicOn = false;
+    var musicStarted = false;
+
+    if (bgMusic) {
+        bgMusic.volume = 0.3;
+    }
+
+    function startMusic() {
+        if (!bgMusic || musicStarted) return;
+        bgMusic.play().then(function () {
+            musicStarted = true;
+            musicOn = true;
+            if (musicBtn) musicBtn.textContent = '🔊';
+        }).catch(function (err) {
+            console.log('Автозапуск заблокирован:', err);
+        });
+    }
+
+    function toggleMusic() {
+        if (!bgMusic) return;
+        if (musicOn) {
+            bgMusic.pause();
+            musicOn = false;
+            if (musicBtn) musicBtn.textContent = '🔇';
+        } else {
+            bgMusic.play().then(function () {
+                musicOn = true;
+                musicStarted = true;
+                if (musicBtn) musicBtn.textContent = '🔊';
+            });
+        }
+    }
+
+    if (musicBtn) {
+        musicBtn.addEventListener('click', toggleMusic);
+    }
+
+    // 3. Включаем музыку при первом действии
     function tryAutoStart() {
         if (!musicStarted) startMusic();
         document.removeEventListener('keydown', tryAutoStart);
@@ -809,4 +849,4 @@
     document.addEventListener('touchstart', tryAutoStart);
     document.addEventListener('click', tryAutoStart);
 
-})();
+})(); // Конец скрипта

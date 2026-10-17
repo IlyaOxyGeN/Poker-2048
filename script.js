@@ -152,34 +152,34 @@
     // СПРАВОЧНИК И УПРАВЛЕНИЕ МОДАЛКОЙ
     // ============================================================
     function buildCombosList() {
-        var listEl = document.getElementById('combosList');
+        var listEl = ent.getElementById('combosList');
         if (!listEl) return;
         listEl.innerHTML = '';
         for (var i = 0; i < BASE_COMBOS.length; i++) {
             var combo = BASE_COMBOS[i];
-            var row = document.createElement('div');
+            var row = ent.createElement('div');
             row.className = 'combo-row';
             row.setAttribute('data-level', String(i));
             
-            var img = document.createElement('img');
+            var img = ent.createElement('img');
             img.className = 'row-img';
             img.src = combo.img;
             img.alt = combo.name;
             row.appendChild(img);
 
-            var info = document.createElement('div');
+            var info = ent.createElement('div');
             info.className = 'row-info';
-            var name = document.createElement('div');
+            var name = ent.createElement('div');
             name.className = 'row-name';
             name.textContent = combo.name;
             info.appendChild(name);
-            var desc = document.createElement('div');
+            var desc = ent.createElement('div');
             desc.className = 'row-desc';
             desc.textContent = COMBO_DESCRIPTIONS[i] || '';
             info.appendChild(desc);
             row.appendChild(info);
 
-            var value = document.createElement('div');
+            var value = ent.createElement('div');
             value.className = 'row-value';
             value.textContent = combo.value;
             row.appendChild(value);
@@ -189,7 +189,7 @@
     }
 
     function openCombosModal() {
-        var modal = document.getElementById('combosModal');
+        var modal = ent.getElementById('combosModal');
         if (modal) {
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
@@ -745,7 +745,61 @@
     boardEl.addEventListener('touchcancel', function () {
         touchStart = null;
     });
+    // ============================================================
+    // МУЗЫКА
+    // ============================================================
+    var bgMusic = document.getElementById('bgMusic');
+    var musicBtn = document.getElementById('musicBtn');
+    var musicOn = false;
+    var musicStarted = false;
 
+    // Устанавливаем громкость (30% — чтобы не перебивала мысли)
+    if (bgMusic) {
+        bgMusic.volume = 0.3;
+    }
+
+    function startMusic() {
+        if (!bgMusic || musicStarted) return;
+        bgMusic.play().then(function () {
+            musicStarted = true;
+            musicOn = true;
+            if (musicBtn) musicBtn.textContent = '🔊';
+        }).catch(function (err) {
+            console.log('Автозапуск заблокирован браузером:', err);
+        });
+    }
+
+    function toggleMusic() {
+        if (!bgMusic) return;
+        if (musicOn) {
+            bgMusic.pause();
+            musicOn = false;
+            if (musicBtn) musicBtn.textContent = '🔇';
+        } else {
+            bgMusic.play().then(function () {
+                musicOn = true;
+                musicStarted = true;
+                if (musicBtn) musicBtn.textContent = '🔊';
+            });
+        }
+    }
+
+    if (musicBtn) {
+        musicBtn.addEventListener('click', toggleMusic);
+    }
+
+    // Автозапуск при первом действии игрока (клик, свайп, кнопка)
+    function tryAutoStart() {
+        if (!musicStarted) startMusic();
+        document.removeEventListener('keydown', tryAutoStart);
+        document.removeEventListener('touchstart', tryAutoStart);
+        document.removeEventListener('click', tryAutoStart);
+    }
+
+    document.addEventListener('keydown', tryAutoStart);
+    document.addEventListener('touchstart', tryAutoStart);
+    document.addEventListener('click', tryAutoStart);
+    // ============================================================
     document.getElementById('newGame').addEventListener('click', init);
     
     if (undoBtn) undoBtn.addEventListener('click', undoMove);

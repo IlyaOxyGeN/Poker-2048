@@ -18,29 +18,21 @@
         { name: 'Стрит-флеш',    value: 512,  short: 'Стрит-флеш', img: 'img/512.png' },
         { name: 'Роял-флеш',     value: 1024, short: 'Роял-флеш',  img: 'img/1024.png' }
     ];
-
-    // Мягкий лимит (дальше бесконечность)
     var MAX_LEVEL = 20;
 
-    // Функция получения комбинации по уровню
     function getCombo(level) {
-        if (level < BASE_COMBOS.length) {
-            return BASE_COMBOS[level];
-        }
-        // Уровни выше 9 — "Роял-флеш" с растущим значением
+        if (level < BASE_COMBOS.length) return BASE_COMBOS[level];
         var baseValue = 1024 * Math.pow(2, level - 9);
         var suffixes = ['', '🔥', '💎', '⚡', '👑', '🌟', '💫', '🏆'];
         var suffix = suffixes[(level - 9) % suffixes.length];
-
         return {
             name: 'Роял-флеш ' + suffix,
             value: baseValue,
             short: 'Роял-флеш ' + suffix,
-            img: 'img/1024.png'   // та же картинка
+            img: 'img/1024.png'
         };
     }
 
-    // Описания для модалки
     var COMBO_DESCRIPTIONS = [
         'Одна любая карта. Основа всего — собирайте пары.',
         'Две карты одного ранга. Сливаются в «Две пары».',
@@ -62,6 +54,7 @@
     var tilesLayer = document.getElementById('tilesLayer');
     var scoreEl    = document.getElementById('score');
     var bestEl     = document.getElementById('best');
+    var undoBtn    = document.getElementById('undoBtn');
 
     // ============================================================
     // СОСТОЯНИЕ
@@ -70,9 +63,12 @@
     var score = 0;
     var best = parseInt(localStorage.getItem('poker2048-best') || '0', 10) || 0;
     var over = false;
-    var won = false;        // победа (первый Роял-флеш)
+    var won = false;
     var idCounter = 0;
     var tiles = {};
+    
+    // Undo
+    var previousState = null;
 
     var cellW = 88;
     var cellH = 104;
@@ -92,7 +88,6 @@
         } else {
             maxBoardWidth = Math.min(window.innerWidth - 32, 460);
         }
-
         var padSize = maxBoardWidth < 380 ? 6 : 10;
         var gapSize = maxBoardWidth < 380 ? 6 : 8;
 
@@ -100,10 +95,7 @@
         var cw = Math.floor(availableW / 4);
         var ch = Math.floor(cw * 1.18);
 
-        cellW = cw;
-        cellH = ch;
-        gap   = gapSize;
-        pad   = padSize;
+        cellW = cw; cellH = ch; gap = gapSize; pad = padSize;
 
         var innerW = 4 * cw + 3 * gapSize + 2 * padSize;
         var innerH = 4 * ch + 3 * gapSize + 2 * padSize;
@@ -114,17 +106,17 @@
         var gridW = 4 * cw + 3 * gapSize;
         var gridH = 4 * ch + 3 * gapSize;
 
-        gridLayer.style.top    = padSize + 'px';
-        gridLayer.style.left   = padSize + 'px';
-        gridLayer.style.width  = gridW + 'px';
+        gridLayer.style.top = padSize + 'px';
+        gridLayer.style.left = padSize + 'px';
+        gridLayer.style.width = gridW + 'px';
         gridLayer.style.height = gridH + 'px';
         gridLayer.style.gridTemplateColumns = 'repeat(4, ' + cw + 'px)';
-        gridLayer.style.gridTemplateRows    = 'repeat(4, ' + ch + 'px)';
+        gridLayer.style.gridTemplateRows = 'repeat(4, ' + ch + 'px)';
         gridLayer.style.gap = gapSize + 'px';
 
-        tilesLayer.style.top    = padSize + 'px';
-        tilesLayer.style.left   = padSize + 'px';
-        tilesLayer.style.width  = gridW + 'px';
+        tilesLayer.style.top = padSize + 'px';
+        tilesLayer.style.left = padSize + 'px';
+        tilesLayer.style.width = gridW + 'px';
         tilesLayer.style.height = gridH + 'px';
 
         for (var r = 0; r < SIZE; r++) {
@@ -142,7 +134,7 @@
         var y = r * (cellH + gap);
         node.style.setProperty('--tx', x + 'px');
         node.style.setProperty('--ty', y + 'px');
-        node.style.width  = cellW + 'px';
+        node.style.width = cellW + 'px';
         node.style.height = cellH + 'px';
 
         if (instant) {
@@ -157,40 +149,34 @@
     }
 
     // ============================================================
-    // СПРАВОЧНИК КОМБИНАЦИЙ (МОДАЛКА)
+    // СПРАВОЧНИК И УПРАВЛЕНИЕ МОДАЛКОЙ
     // ============================================================
     function buildCombosList() {
         var listEl = document.getElementById('combosList');
         if (!listEl) return;
-
         listEl.innerHTML = '';
-
         for (var i = 0; i < BASE_COMBOS.length; i++) {
             var combo = BASE_COMBOS[i];
-
             var row = document.createElement('div');
             row.className = 'combo-row';
             row.setAttribute('data-level', String(i));
-
+            
             var img = document.createElement('img');
             img.className = 'row-img';
-            img.src = combo.img || '';
+            img.src = combo.img;
             img.alt = combo.name;
             row.appendChild(img);
 
             var info = document.createElement('div');
             info.className = 'row-info';
-
             var name = document.createElement('div');
             name.className = 'row-name';
             name.textContent = combo.name;
             info.appendChild(name);
-
             var desc = document.createElement('div');
             desc.className = 'row-desc';
             desc.textContent = COMBO_DESCRIPTIONS[i] || '';
             info.appendChild(desc);
-
             row.appendChild(info);
 
             var value = document.createElement('div');
@@ -204,32 +190,22 @@
 
     function openCombosModal() {
         var modal = document.getElementById('combosModal');
-        if (!modal) return;
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
+        if (modal) {
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
     }
 
     function closeCombosModal() {
         var modal = document.getElementById('combosModal');
-        if (!modal) return;
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
+        if (modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
     }
 
-    var combosBtn = document.getElementById('combosBtn');
-    var combosClose = document.getElementById('combosClose');
-    var combosBackdrop = document.getElementById('combosBackdrop');
-
-    if (combosBtn) combosBtn.addEventListener('click', openCombosModal);
-    if (combosClose) combosClose.addEventListener('click', closeCombosModal);
-    if (combosBackdrop) combosBackdrop.addEventListener('click', closeCombosModal);
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeCombosModal();
-    });
-
     // ============================================================
-    // СЕТКА
+    // СЕТКА И ПЛИТКИ
     // ============================================================
     function buildGridLayer() {
         gridLayer.innerHTML = '';
@@ -240,9 +216,6 @@
         }
     }
 
-    // ============================================================
-    // ПЛИТКИ
-    // ============================================================
     function createTileNode(id, level) {
         var node = document.createElement('div');
         node.className = 'tile';
@@ -251,13 +224,10 @@
 
         var art = document.createElement('div');
         art.className = 'tile-art';
-
         var img = document.createElement('img');
         img.className = 'tile-img';
-        img.alt = '';
         img.draggable = false;
         art.appendChild(img);
-
         node.appendChild(art);
 
         var val = document.createElement('div');
@@ -278,8 +248,7 @@
 
     function updateTileContent(node, level) {
         node.setAttribute('data-level', level);
-
-        var img   = node.querySelector('.tile-img');
+        var img = node.querySelector('.tile-img');
         var emoji = node.querySelector('.tile-emoji');
         var label = node.querySelector('.tile-label');
         var value = node.querySelector('.tile-value');
@@ -291,14 +260,6 @@
         if (combo.img) {
             img.src = combo.img;
             img.style.display = '';
-            img.onerror = function () {
-                img.style.display = 'none';
-                label.style.display = '';
-                if (level >= 9) {
-                    emoji.style.display = '';
-                    emoji.textContent = '\uD83D\uDC51';
-                }
-            };
             label.style.display = 'none';
             emoji.style.display = 'none';
         } else {
@@ -306,16 +267,13 @@
             label.style.display = '';
             if (level >= 9) {
                 emoji.style.display = '';
-                emoji.textContent = '\uD83D\uDC51';
+                emoji.textContent = '👑';
             } else {
                 emoji.style.display = 'none';
             }
         }
     }
 
-    // ============================================================
-    // ЛОГИКА
-    // ============================================================
     function emptyGrid() {
         var g = [];
         for (var r = 0; r < SIZE; r++) {
@@ -333,6 +291,9 @@
         return a.level === b.level && a.level < MAX_LEVEL;
     }
 
+    // ============================================================
+    // НОВАЯ КАРТА
+    // ============================================================
     function spawnRandomCard() {
         var empties = [];
         for (var r = 0; r < SIZE; r++) {
@@ -355,14 +316,141 @@
 
         applyPosition(node, pos.r, pos.c, true);
         node.classList.add('tile-new');
-
-        setTimeout(function () {
-            node.classList.remove('tile-new');
-        }, 300);
+        setTimeout(function () { node.classList.remove('tile-new'); }, 300);
 
         return card;
     }
 
+    // ============================================================
+    // UNDO (ОТМЕНА ХОДА)
+    // ============================================================
+    function saveState() {
+        var gridCopy = [];
+        for (var r = 0; r < SIZE; r++) {
+            var row = [];
+            for (var c = 0; c < SIZE; c++) {
+                var card = grid[r][c];
+                row.push(card ? { id: card.id, level: card.level } : null);
+            }
+            gridCopy.push(row);
+        }
+        previousState = { grid: gridCopy, score: score, idCounter: idCounter };
+        if (undoBtn) undoBtn.disabled = false;
+    }
+
+    function undoMove() {
+        if (!previousState || over) return;
+
+        // Очищаем DOM
+        tilesLayer.innerHTML = '';
+        tiles = {};
+
+        // Восстанавливаем состояние
+        grid = emptyGrid();
+        score = previousState.score;
+        idCounter = previousState.idCounter;
+        won = false; // сбрасываем победу, если откатились
+
+        for (var r = 0; r < SIZE; r++) {
+            for (var c = 0; c < SIZE; c++) {
+                var savedCard = previousState.grid[r][c];
+                if (savedCard) {
+                    grid[r][c] = { id: savedCard.id, level: savedCard.level };
+                    
+                    var node = createTileNode(savedCard.id, savedCard.level);
+                    updateTileContent(node, savedCard.level);
+                    tilesLayer.appendChild(node);
+                    tiles[node.dataset.id] = node; // тут небольшой хак
+                    tiles[savedCard.id] = node;
+                    
+                    applyPosition(node, r, c, true);
+                }
+            }
+        }
+
+        scoreEl.textContent = score;
+        previousState = null; // Откат только на 1 шаг
+        if (undoBtn) undoBtn.disabled = true;
+    }
+
+    // ============================================================
+    // ЧИТ-КОД
+    // ============================================================
+    var cheatInput = '';
+    var CHEAT_CODE = 'poker';
+
+    function handleCheatInput(key) {
+        cheatInput += key.toLowerCase();
+        if (cheatInput.length > CHEAT_CODE.length) {
+            cheatInput = cheatInput.slice(-CHEAT_CODE.length);
+        }
+        if (cheatInput === CHEAT_CODE) {
+            cheatInput = '';
+            activateCheat();
+        }
+    }
+
+    function activateCheat() {
+        if (over) return;
+        saveState(); // можно отменить чит
+
+        // Ищем свободное место (или заменяем самое слабое)
+        var emptySpots = [];
+        var lowestLevel = 999;
+        var lowestR = -1, lowestC = -1;
+
+        for (var r = 0; r < SIZE; r++) {
+            for (var c = 0; c < SIZE; c++) {
+                if (!grid[r][c]) {
+                    emptySpots.push({ r: r, c: c });
+                } else if (grid[r][c].level < lowestLevel) {
+                    lowestLevel = grid[r][c].level;
+                    lowestR = r;
+                    lowestC = c;
+                }
+            }
+        }
+
+        var target;
+        if (emptySpots.length > 0) {
+            target = emptySpots[randInt(emptySpots.length)];
+        } else {
+            target = { r: lowestR, c: lowestC };
+            // Удаляем старую плитку
+            var oldCard = grid[target.r][target.c];
+            if (oldCard && tiles[oldCard.id]) {
+                tiles[oldCard.id].parentNode.removeChild(tiles[oldCard.id]);
+                delete tiles[oldCard.id];
+            }
+        }
+
+        // Создаём Роял-флеш (уровень 9)
+        var cheatCard = { id: 'cheat_' + Date.now(), level: 9 };
+        grid[target.r][target.c] = cheatCard;
+
+        var node = createTileNode(cheatCard.id, 9);
+        updateTileContent(node, 9);
+        tilesLayer.appendChild(node);
+        tiles[cheatCard.id] = node;
+
+        applyPosition(node, target.r, target.c, true);
+        node.classList.add('tile-new');
+
+        // Празднование и обновление счёта (дадим очки за чит)
+        score += 1024;
+        if (score > best) {
+            best = score;
+            localStorage.setItem('poker2048-best', String(best));
+        }
+        scoreEl.textContent = score;
+        bestEl.textContent = best;
+
+        showCelebration();
+    }
+
+    // ============================================================
+    // ХОД
+    // ============================================================
     function move(dir) {
         if (over) return;
 
@@ -427,6 +515,10 @@
 
         if (serializeGrid() === before) return;
 
+        // СОХРАНЯЕМ СОСТОЯНИЕ ДО ВСЕХ АНИМАЦИЙ
+        saveState();
+
+        // Движение
         for (var r2 = 0; r2 < SIZE; r2++) {
             for (var c2 = 0; c2 < SIZE; c2++) {
                 var card2 = grid[r2][c2];
@@ -437,6 +529,7 @@
             }
         }
 
+        // Слияния
         for (var mi = 0; mi < mergedTiles.length; mi++) {
             (function (info) {
                 var absorbedNode = tiles[info.absorbedId];
@@ -498,7 +591,6 @@
     }
 
     function checkEnd() {
-        // Проверка первого Роял-флеша (победа, но игра продолжается)
         if (!won) {
             for (var r = 0; r < SIZE; r++) {
                 for (var c = 0; c < SIZE; c++) {
@@ -510,7 +602,6 @@
                 }
             }
         }
-        // Проверка проигрыша
         if (!canMove()) {
             over = true;
             showGameOver('ИГРА ОКОНЧЕНА');
@@ -522,7 +613,6 @@
         el.className = 'celebration';
         el.innerHTML = '👑 РОЯЛ-ФЛЕШ! 👑<br><span style="font-size:16px;opacity:.8;">Соберите ещё!</span>';
         boardEl.appendChild(el);
-
         setTimeout(function () {
             if (el.parentNode) el.parentNode.removeChild(el);
         }, 2500);
@@ -563,6 +653,9 @@
         over = false;
         won = false;
         idCounter = 0;
+        previousState = null;
+
+        if (undoBtn) undoBtn.disabled = true;
 
         scoreEl.textContent = score;
         bestEl.textContent = best;
@@ -579,13 +672,22 @@
         ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd',
         a: 'l', d: 'r', w: 'u', s: 'd',
         A: 'l', D: 'r', W: 'u', S: 'd',
-        '\u0444': 'l', '\u0432': 'r', '\u0446': 'u', '\u044b': 'd'
+        'ф': 'l', 'в': 'r', 'ц': 'u', 'ы': 'd'
     };
 
     document.addEventListener('keydown', function (e) {
         var dir = keyMap[e.key];
         if (dir) { e.preventDefault(); move(dir); }
-        if (e.key === 'r' || e.key === 'R' || e.key === '\u043a' || e.key === '\u041a') init();
+        
+        if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') init();
+        
+        // Undo по клавише Z
+        if (e.key === 'z' || e.key === 'Z' || e.key === 'я' || e.key === 'Я') undoMove();
+
+        // Чит-код
+        if (/^[a-zA-Zа-яА-Я]$/.test(e.key)) {
+            handleCheatInput(e.key);
+        }
     });
 
     var touchStart = null;
@@ -617,6 +719,16 @@
     });
 
     document.getElementById('newGame').addEventListener('click', init);
+    
+    if (undoBtn) undoBtn.addEventListener('click', undoMove);
+    
+    var combosBtn = document.getElementById('combosBtn');
+    var combosClose = document.getElementById('combosClose');
+    var combosBackdrop = document.getElementById('combosBackdrop');
+
+    if (combosBtn) combosBtn.addEventListener('click', openCombosModal);
+    if (combosClose) combosClose.addEventListener('click', closeCombosModal);
+    if (combosBackdrop) combosBackdrop.addEventListener('click', closeCombosModal);
 
     var resizeTimeout = null;
     window.addEventListener('resize', function () {

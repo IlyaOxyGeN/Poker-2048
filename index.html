@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0b3d1e">
+    
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
+    
     <title>Poker 2048</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -39,26 +41,33 @@
         <p class="hint">Стрелки, WASD или свайпы</p>
     </div>
 
-    <!-- Модальное окно: справочник комбинаций -->
+    <!-- ========================================== -->
+    <!-- МОДАЛКА 1: СПРАВОЧНИК КОМБИНАЦИЙ (📖)      -->
+    <!-- ========================================== -->
     <div class="modal" id="combosModal">
         <div class="modal-backdrop" id="combosBackdrop"></div>
         <div class="modal-content">
             <button class="modal-close" id="combosClose" aria-label="Закрыть">✕</button>
             <h2 class="modal-title">♠ Комбинации покера ♥</h2>
             <p class="modal-subtitle">Собирайте одинаковые — они сливаются в следующую</p>
+            
             <div class="combos-list" id="combosList"></div>
+            
             <div class="modal-hint">
                 Цель — собрать 👑 <strong>Роял-флеш</strong> (1024 очка)
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно: подтверждение новой игры -->
+    <!-- ========================================== -->
+    <!-- МОДАЛКА 2: ПОДТВЕРЖДЕНИЕ НОВОЙ ИГРЫ         -->
+    <!-- ========================================== -->
     <div class="modal" id="confirmModal">
         <div class="modal-backdrop" id="confirmBackdrop"></div>
         <div class="modal-content confirm-content">
             <h2 class="modal-title">Начать заново?</h2>
             <p class="modal-subtitle">Текущий прогресс и счёт будут потеряны.</p>
+            
             <div class="confirm-buttons">
                 <button id="confirmYes" class="btn-yes">Да, заново</button>
                 <button id="confirmNo" class="btn-no">Отмена</button>
@@ -66,10 +75,12 @@
         </div>
     </div>
 
+    <!-- АУДИО -->
     <audio id="bgMusic" loop preload="none">
         <source src="audio/bg-music.mp3" type="audio/mpeg">
     </audio>
 
+    <!-- СКРИПТ -->
     <script src="script.js"></script>
 </body>
 </html>

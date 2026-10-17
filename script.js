@@ -505,7 +505,88 @@
         spawnRandomCard();
         spawnRandomCard();
     }
+    // ============================================================
+    // ЧИТ-КОД
+    // ============================================================
+    var cheatInput = '';
+    var CHEAT_CODE = 'flop';   // ← Чит-код
 
+    function handleCheatInput(key) {
+        cheatInput += key.toLowerCase();
+        if (cheatInput.length > CHEAT_CODE.length) {
+            cheatInput = cheatInput.slice(-CHEAT_CODE.length);
+        }
+        if (cheatInput === CHEAT_CODE) {
+            cheatInput = '';
+            activateCheat();
+        }
+    }
+
+    function activateCheat() {
+        if (over) return;
+        
+        // Сохраняем состояние для Undo
+        var gridSnapshot = [];
+        for (var sr = 0; sr < SIZE; sr++) {
+            var rowSnap = [];
+            for (var sc = 0; sc < SIZE; sc++) {
+                var cardSnap = grid[sr][sc];
+                rowSnap.push(cardSnap ? { id: cardSnap.id, level: cardSnap.level } : null);
+            }
+            gridSnapshot.push(rowSnap);
+        }
+        previousState = { grid: gridSnapshot, score: score, idCounter: idCounter, won: won };
+
+        var emptySpots = [];
+        var lowestLevel = 999;
+        var lowestR = -1, lowestC = -1;
+
+        for (var r = 0; r < SIZE; r++) {
+            for (var c = 0; c < SIZE; c++) {
+                if (!grid[r][c]) {
+                    emptySpots.push({ r: r, c: c });
+                } else if (grid[r][c].level < lowestLevel) {
+                    lowestLevel = grid[r][c].level;
+                    lowestR = r;
+                    lowestC = c;
+                }
+            }
+        }
+
+        var target;
+        if (emptySpots.length > 0) {
+            target = emptySpots[randInt(emptySpots.length)];
+        } else {
+            target = { r: lowestR, c: lowestC };
+            var oldCard = grid[target.r][target.c];
+            if (oldCard && tiles[oldCard.id]) {
+                tiles[oldCard.id].parentNode.removeChild(tiles[oldCard.id]);
+                delete tiles[oldCard.id];
+            }
+        }
+
+        var cheatCard = { id: 'cheat_' + Date.now(), level: 9 };
+        grid[target.r][target.c] = cheatCard;
+
+        var node = createTileNode(cheatCard.id, 9);
+        updateTileContent(node, 9);
+        tilesLayer.appendChild(node);
+        tiles[cheatCard.id] = node;
+        
+        applyPosition(node, target.r, target.c, true);
+        node.classList.add('tile-new');
+
+        score += 1024;
+        if (score > best) {
+            best = score;
+            localStorage.setItem('poker2048-best', String(best));
+        }
+        scoreEl.textContent = score;
+        bestEl.textContent = best;
+        
+        if (undoBtn) undoBtn.disabled = false;
+        showCelebration();
+    }
     // ============================================================
     // УПРАВЛЕНИЕ
     // ============================================================

@@ -505,11 +505,12 @@
         spawnRandomCard();
         spawnRandomCard();
     }
+
     // ============================================================
     // ЧИТ-КОД
     // ============================================================
     var cheatInput = '';
-    var CHEAT_CODE = 'flop';   // ← Чит-код
+    var CHEAT_CODE = 'flop';
 
     function handleCheatInput(key) {
         cheatInput += key.toLowerCase();
@@ -525,7 +526,6 @@
     function activateCheat() {
         if (over) return;
         
-        // Сохраняем состояние для Undo
         var gridSnapshot = [];
         for (var sr = 0; sr < SIZE; sr++) {
             var rowSnap = [];
@@ -587,8 +587,9 @@
         if (undoBtn) undoBtn.disabled = false;
         showCelebration();
     }
+
     // ============================================================
-    // УПРАВЛЕНИЕ
+    // УПРАВЛЕНИЕ КЛАВИАТУРОЙ
     // ============================================================
     var keyMap = {
         ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd',
@@ -597,7 +598,7 @@
         'ф': 'l', 'в': 'r', 'ц': 'u', 'ы': 'd'
     };
 
-       document.addEventListener('keydown', function (e) {
+    document.addEventListener('keydown', function (e) {
         // 1. Движение
         var dir = keyMap[e.key];
         if (dir) { 
@@ -606,9 +607,9 @@
             return; 
         }
 
-           // 2. Рестарт (только Shift+R)
+        // 2. Рестарт (только Shift+R)
         if (e.key === 'R' || e.key === 'К') {
-            askNewGame(); // Теперь тоже спрашиваем!
+            askNewGame(); // Вызываем окно подтверждения
             return;
         }
 
@@ -618,12 +619,15 @@
             return;
         }
 
-        // 4. Чит-код (собираем нажатые буквы)
+        // 4. Чит-код
         if (/^[a-zA-Zа-яА-Я]$/.test(e.key)) {
             handleCheatInput(e.key);
         }
     });
 
+    // ============================================================
+    // УПРАВЛЕНИЕ СВАЙПАМИ
+    // ============================================================
     var touchStart = null;
     boardEl.addEventListener('touchstart', function (e) {
         if (e.touches.length > 1) return;
@@ -648,12 +652,43 @@
 
     boardEl.addEventListener('touchcancel', function () { touchStart = null; });
 
-    // Кнопки
+    // ============================================================
+    // КНОПКИ И ОКНО ПОДТВЕРЖДЕНИЯ
+    // ============================================================
     var newGameBtn = document.getElementById('newGame');
-    if (newGameBtn) newGameBtn.addEventListener('click', init);
+    var confirmModal = document.getElementById('confirmModal');
+    var confirmYes = document.getElementById('confirmYes');
+    var confirmNo = document.getElementById('confirmNo');
+    var confirmBackdrop = document.getElementById('confirmBackdrop');
+
+    function askNewGame() {
+        if (!confirmModal) { init(); return; }
+        confirmModal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeConfirm() {
+        if (confirmModal) {
+            confirmModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (newGameBtn) newGameBtn.addEventListener('click', askNewGame);
     if (undoBtn) undoBtn.addEventListener('click', undoMove);
 
-    // Музыка
+    if (confirmYes) {
+        confirmYes.addEventListener('click', function() {
+            closeConfirm();
+            init();
+        });
+    }
+    if (confirmNo) confirmNo.addEventListener('click', closeConfirm);
+    if (confirmBackdrop) confirmBackdrop.addEventListener('click', closeConfirm);
+
+    // ============================================================
+    // МУЗЫКА
+    // ============================================================
     var musicOn = false;
     var musicStarted = false;
     if (bgMusic) bgMusic.volume = 0.3;
@@ -677,7 +712,9 @@
         });
     }
 
-    // Модалка комбинаций
+    // ============================================================
+    // МОДАЛКА КОМБИНАЦИЙ
+    // ============================================================
     var combosBtn = document.getElementById('combosBtn');
     var combosClose = document.getElementById('combosClose');
     var combosBackdrop = document.getElementById('combosBackdrop');
@@ -725,34 +762,15 @@
         });
     }
 
-    // Resize
+    // ============================================================
+    // RESIZE
+    // ============================================================
     var resizeTimeout = null;
     window.addEventListener('resize', function () {
         if (resizeTimeout) clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(recalcSizes, 100);
     });
-    // Обработчики окна подтверждения
-    var confirmYes = document.getElementById('confirmYes');
-    var confirmNo = document.getElementById('confirmNo');
-    var confirmBackdrop = document.getElementById('confirmBackdrop');
 
-    if (confirmYes) {
-        confirmYes.addEventListener('click', function() {
-            confirmModal.classList.remove('open');
-            document.body.style.overflow = '';
-            init(); // Запускаем новую игру
-        });
-    }
-
-    function closeConfirm() {
-        if (confirmModal) {
-            confirmModal.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-    }
-
-    if (confirmNo) confirmNo.addEventListener('click', closeConfirm);
-    if (confirmBackdrop) confirmBackdrop.addEventListener('click', closeConfirm);
     // ============================================================
     // ЗАПУСК
     // ============================================================

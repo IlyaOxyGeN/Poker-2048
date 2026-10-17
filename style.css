@@ -685,3 +685,50 @@ h1 {
     transform: none;
     box-shadow: 0 4px 0 #6b4e00;
 }
+/* ============================================
+   МОДАЛКА ПОДТВЕРЖДЕНИЯ
+   ============================================ */
+.confirm-content {
+    max-width: 360px;
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-yes, .btn-no {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    transition: transform .1s, background .2s;
+}
+
+.btn-yes {
+    background: linear-gradient(180deg, #f5d76e, #b8860b);
+    color: #1a1a1a;
+    box-shadow: 0 4px 0 #6b4e00, 0 6px 12px rgba(0, 0, 0, .5);
+}
+
+.btn-no {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--gold);
+    border: 2px solid rgba(212, 175, 55, .5);
+}
+
+.btn-yes:active, .btn-no:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #6b4e00;
+}
+.btn-no:active {
+    box-shadow: none;
+}

@@ -597,11 +597,31 @@
         'ф': 'l', 'в': 'r', 'ц': 'u', 'ы': 'd'
     };
 
-    document.addEventListener('keydown', function (e) {
+       document.addEventListener('keydown', function (e) {
+        // 1. Движение
         var dir = keyMap[e.key];
-        if (dir) { e.preventDefault(); move(dir); }
-        if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') init();
-        if (e.key === 'z' || e.key === 'Z' || e.key === 'я' || e.key === 'Я') undoMove();
+        if (dir) { 
+            e.preventDefault(); 
+            move(dir); 
+            return; 
+        }
+
+        // 2. Рестарт (только Shift+R)
+        if (e.key === 'R' || e.key === 'К') {
+            init();
+            return;
+        }
+
+        // 3. Отмена
+        if (e.key === 'z' || e.key === 'Z' || e.key === 'я' || e.key === 'Я') {
+            undoMove();
+            return;
+        }
+
+        // 4. Чит-код (собираем нажатые буквы)
+        if (/^[a-zA-Zа-яА-Я]$/.test(e.key)) {
+            handleCheatInput(e.key);
+        }
     });
 
     var touchStart = null;

@@ -455,6 +455,25 @@
         if (over) return;
 
         var before = serializeGrid();
+
+        // === СОХРАНЯЕМ СОСТОЯНИЕ ДО ЛЮБЫХ ИЗМЕНЕНИЙ ===
+        var gridSnapshot = [];
+        for (var sr = 0; sr < SIZE; sr++) {
+            var rowSnap = [];
+            for (var sc = 0; sc < SIZE; sc++) {
+                var cardSnap = grid[sr][sc];
+                rowSnap.push(cardSnap ? { id: cardSnap.id, level: cardSnap.level } : null);
+            }
+            gridSnapshot.push(rowSnap);
+        }
+        previousState = {
+            grid: gridSnapshot,
+            score: score,
+            idCounter: idCounter,
+            won: won
+        };
+        // ================================================
+
         var mergedTiles = [];
 
         for (var li = 0; li < SIZE; li++) {
@@ -513,10 +532,15 @@
             }
         }
 
-        if (serializeGrid() === before) return;
+        // Если ничего не сдвинулось — отменяем сохранение (чтобы не портить previousState)
+        if (serializeGrid() === before) {
+            previousState = null;
+            if (undoBtn) undoBtn.disabled = true;
+            return;
+        }
 
-        // СОХРАНЯЕМ СОСТОЯНИЕ ДО ВСЕХ АНИМАЦИЙ
-        saveState();
+        // Активируем кнопку Undo
+        if (undoBtn) undoBtn.disabled = false;
 
         // Движение
         for (var r2 = 0; r2 < SIZE; r2++) {

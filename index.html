@@ -49,7 +49,19 @@
             <p class="modal-subtitle">Собирайте одинаковые — они сливаются в следующую</p>
 
             <div class="combos-list" id="combosList"></div>
-
+    <!-- Модальное окно: подтверждение новой игры -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-backdrop" id="confirmBackdrop"></div>
+        <div class="modal-content confirm-content">
+            <h2 class="modal-title">Начать заново?</h2>
+            <p class="modal-subtitle">Текущий прогресс и счёт будут потеряны.</p>
+            
+            <div class="confirm-buttons">
+                <button id="confirmYes" class="btn-yes">Да, заново</button>
+                <button id="confirmNo" class="btn-no">Отмена</button>
+            </div>
+        </div>
+    </div>
             <div class="modal-hint">
                 Цель — собрать 👑 <strong>Роял-флеш</strong> (1024 очка)
             </div>

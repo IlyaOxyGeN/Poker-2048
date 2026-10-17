@@ -338,38 +338,42 @@
         if (undoBtn) undoBtn.disabled = false;
     }
 
-    function undoMove() {
+       function undoMove() {
         if (!previousState || over) return;
 
-        // Очищаем DOM
+        // 1. Очищаем слой плиток полностью
         tilesLayer.innerHTML = '';
         tiles = {};
 
-        // Восстанавливаем состояние
+        // 2. Восстанавливаем логическое состояние
         grid = emptyGrid();
         score = previousState.score;
         idCounter = previousState.idCounter;
-        won = false; // сбрасываем победу, если откатились
+        won = previousState.won || false;
 
+        // 3. Пересоздаём плитки из снимка
         for (var r = 0; r < SIZE; r++) {
             for (var c = 0; c < SIZE; c++) {
                 var savedCard = previousState.grid[r][c];
                 if (savedCard) {
                     grid[r][c] = { id: savedCard.id, level: savedCard.level };
-                    
+
                     var node = createTileNode(savedCard.id, savedCard.level);
                     updateTileContent(node, savedCard.level);
                     tilesLayer.appendChild(node);
-                    tiles[node.dataset.id] = node; // тут небольшой хак
                     tiles[savedCard.id] = node;
-                    
+
                     applyPosition(node, r, c, true);
                 }
             }
         }
 
+        // 4. Обновляем счёт
         scoreEl.textContent = score;
-        previousState = null; // Откат только на 1 шаг
+        if (bestEl) bestEl.textContent = best;
+
+        // 5. Отключаем кнопку — откат только на 1 шаг
+        previousState = null;
         if (undoBtn) undoBtn.disabled = true;
     }
 
